@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ESCOBAR</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0A0A0A;
+  --card: #121212;
+  --card2: #161616;
+  --border: rgba(255,255,255,0.07);
+  --text: #ffffff;
+  --muted: #555;
+  --muted2: #333;
+  --accent: #ffffff;
+  --nav-h: 72px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── SPLASH ── */
+#splash {
+  position: fixed; inset: 0; z-index: 999;
+  background: #0A0A0A;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+  transition: opacity 0.5s ease;
+}
+#splash .s-logo {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 28px; font-weight: 700;
+  letter-spacing: 6px; color: #fff;
+  animation: fadeUp 0.6s ease forwards;
+}
+#splash .s-sub {
+  font-size: 12px; color: #444; letter-spacing: 1.5px;
+  animation: fadeUp 0.6s 0.15s ease both;
+}
+#splash .s-bar {
+  margin-top: 32px;
+  width: 48px; height: 2px; background: #1e1e1e; border-radius: 1px; overflow: hidden;
+  animation: fadeUp 0.6s 0.25s ease both;
+}
+#splash .s-fill {
+  height: 100%; background: #fff; border-radius: 1px;
+  animation: fill 1.8s ease forwards;
+}
+@keyframes fill { from { width: 0 } to { width: 100% } }
+@keyframes fadeUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+
+/* ── APP SHELL ── */
+#app { height: 100vh; display: flex; flex-direction: column; opacity: 0; transition: opacity 0.4s ease; }
+#app.visible { opacity: 1; }
+
+/* ── PAGES ── */
+.pages { flex: 1; overflow: hidden; position: relative; }
+.page { position: absolute; inset: 0; overflow-y: auto; padding-bottom: calc(var(--nav-h) + 8px); opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity 0.22s ease, transform 0.22s ease; }
+.page.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+.page::-webkit-scrollbar { display: none; }
+
+/* ── NAV BAR ── */
+nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: var(--nav-h);
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 12px 8px;
+  background: transparent;
+  z-index: 100;
+}
+
+.nav-mono {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  border-radius: 100px;
+  padding: 6px 6px;
+  gap: 2px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 9px 6px;
+  border-radius: 100px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: rgba(255,255,255,0.35);
+  font-size: 9px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.nav-btn svg {
+  width: 20px; height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: all 0.2s ease;
+}
+
+.nav-btn.active {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.95);
+}
+
+.nav-btn:active { transform: scale(0.94); }
+
+/* ── TOP BAR ── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 10px;
+}
+.topbar-logo {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 14px; font-weight: 500; letter-spacing: 3px; color: #fff;
+}
+.topbar-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #1e1e1e; border: 0.5px solid #2a2a2a;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: #555; overflow: hidden;
+}
+.topbar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── BANNER ── */
+.banner {
+  margin: 0 12px 16px;
+  background: linear-gradient(135deg, #141414 0%, #111 100%);
+  border: 0.5px solid #222;
+  border-radius: 20px;
+  padding: 20px;
+  position: relative; overflow: hidden;
+}
+.banner::before {
+  content: '';
+  position: absolute; top: -30px; right: -20px;
+  width: 100px; height: 100px;
+  background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.banner-sub { font-size: 10px; color: #444; letter-spacing: 1px; margin-bottom: 8px; }
+.banner-title { font-family: 'Unbounded', sans-serif; font-size: 19px; font-weight: 500; line-height: 1.3; color: #fff; }
+.banner-title span { color: #666; }
+
+/* ── STATS ROW ── */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 12px 16px; }
+.stat-card {
+  background: #111; border: 0.5px solid #1e1e1e; border-radius: 14px;
+  padding: 14px 10px; text-align: center;
+}
+.stat-val { font-family: 'Unbounded', sans-serif; font-size: 15px; font-weight: 500; color: #fff; margin-bottom: 4px; }
+.stat-lbl { font-size: 8.5px; color: #444; letter-spacing: 0.5px; line-height: 1.4; }
+
+/* ── SECTION ── */
+.section-title {
+  font-size: 11px; font-weight: 500; color: #555; letter-spacing: 1px;
+  text-transform: uppercase; padding: 0 16px 10px;
+}
+
+/* ── SERVICE CARDS ── */
+.services { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 12px 16px; }
+.svc-card {
+  background: #111; border: 0.5px solid #1e1e1e; border-radius: 16px;
+  padding: 16px; cursor: pointer; transition: all 0.18s;
+}
+.svc-card:active { transform: scale(0.97); background: #161616; }
+.svc-icon {
+  width: 38px; height: 38px; border-radius: 12px;
+  background: #1a1a1a; border: 0.5px solid #252525;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 10px;
+}
+.svc-icon svg { width: 18px; height: 18px; stroke: rgba(255,255,255,0.6); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.svc-name { font-size: 12px; font-weight: 500; color: #ddd; margin-bottom: 3px; }
+.svc-desc { font-size: 10px; color: #444; line-height: 1.4; }
+
+/* ── SERVICES PAGE ── */
+.svc-list { padding: 0 12px; display: flex; flex-direction: column; gap: 8px; }
+.svc-row {
+  background: #111; border: 0.5px solid #1e1e1e; border-radius: 16px;
+  padding: 16px; display: flex; align-items: center; gap: 14px; cursor: pointer;
+  transition: background 0.15s;
+}
+.svc-row:active { background: #161616; }
+.svc-row-icon { width: 42px; height: 42px; border-radius: 12px; background: #1a1a1a; border: 0.5px solid #252525; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.svc-row-icon svg { width: 20px; height: 20px; stroke: rgba(255,255,255,0.55); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.svc-row-info { flex: 1; }
+.svc-row-name { font-size: 13px; font-weight: 500; color: #e0e0e0; margin-bottom: 3px; }
+.svc-row-sub { font-size: 11px; color: #444; }
+.svc-row-arrow { color: #333; }
+.svc-row-arrow svg { width: 16px; height: 16px; stroke: #333; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── WALLET PAGE ── */
+.wallet-card {
+  margin: 0 12px 16px;
+  background: #111; border: 0.5px solid #1e1e1e; border-radius: 20px;
+  padding: 24px; text-align: center;
+}
+.wallet-card .wc-label { font-size: 10px; color: #444; letter-spacing: 1px; margin-bottom: 10px; }
+.wallet-card .wc-amount { font-family: 'Unbounded', sans-serif; font-size: 32px; font-weight: 300; color: #fff; margin-bottom: 4px; }
+.wallet-card .wc-sub { font-size: 11px; color: #444; }
+.wallet-connect-btn {
+  width: calc(100% - 24px); margin: 0 12px 16px;
+  padding: 15px; border-radius: 14px;
+  background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.12);
+  color: #fff; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.18s; letter-spacing: 0.3px;
+}
+.wallet-connect-btn:active { background: rgba(255,255,255,0.12); transform: scale(0.98); }
+.wallet-list { padding: 0 12px; display: flex; flex-direction: column; gap: 6px; }
+.wallet-item {
+  background: #111; border: 0.5px solid #1e1e1e; border-radius: 14px;
+  padding: 13px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;
+}
+.wallet-item:active { background: #161616; }
+.wallet-dot { width: 8px; height: 8px; border-radius: 50%; background: #2a2a2a; }
+.wallet-item-name { font-size: 13px; color: #ccc; flex: 1; }
+.wallet-item-tag { font-size: 10px; color: #444; background: #1a1a1a; padding: 3px 8px; border-radius: 6px; border: 0.5px solid #252525; }
+
+/* ── PROFILE PAGE ── */
+.profile-head {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px 16px 24px;
+}
+.profile-ava {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: #1a1a1a; border: 0.5px solid #2a2a2a;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; color: #333; margin-bottom: 12px;
+}
+.profile-name { font-size: 15px; font-weight: 500; color: #fff; margin-bottom: 3px; }
+.profile-tag { font-size: 12px; color: #444; }
+.profile-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 12px 16px; }
+.profile-grid { padding: 0 12px; display: flex; flex-direction: column; gap: 6px; }
+.profile-row {
+  background: #111; border: 0.5px solid #1e1e1e; border-radius: 14px;
+  padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+}
+.profile-row-label { font-size: 12px; color: #666; }
+.profile-row-value { font-size: 12px; color: #ccc; }
+
+/* ── SCROLLBAR ── */
+* { scrollbar-width: none; }
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="s-logo">ESCOBAR</div>
+  <div class="s-sub">№1 магазин маркет-услуг в Молдове</div>
+  <div class="s-bar"><div class="s-fill"></div></div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="pages">
+
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="topbar">
+        <span class="topbar-logo">ESCOBAR</span>
+        <div class="topbar-avatar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+      </div>
+
+      <div class="banner">
+        <div class="banner-sub">ДОБРО ПОЖАЛОВАТЬ</div>
+        <div class="banner-title">ESCOBAR<br><span>Market Services</span></div>
+      </div>
+
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-val">4.2K</div>
+          <div class="stat-lbl">Заказов выполнено</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">890</div>
+          <div class="stat-lbl">Активных клиентов</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">99%</div>
+          <div class="stat-lbl">Успешных обменов</div>
+        </div>
+      </div>
+
+      <div class="section-title">Популярные услуги</div>
+      <div class="services">
+        <div class="svc-card" onclick="switchPage('services')">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="svc-name">Обмен валют</div>
+          <div class="svc-desc">TON, USDT, BTC, ETH</div>
+        </div>
+        <div class="svc-card" onclick="switchPage('services')">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          </div>
+          <div class="svc-name">Telegram</div>
+          <div class="svc-desc">Premium, Stars, Gifts</div>
+        </div>
+        <div class="svc-card" onclick="switchPage('services')">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div class="svc-name">KYC</div>
+          <div class="svc-desc">Binance, Bybit, OKX</div>
+        </div>
+        <div class="svc-card" onclick="switchPage('services')">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="svc-name">Донат</div>
+          <div class="svc-desc">Steam, Google Play</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SERVICES -->
+    <div class="page" id="page-services">
+      <div class="topbar">
+        <span class="topbar-logo">УСЛУГИ</span>
+      </div>
+      <div class="svc-list">
+        <div class="svc-row">
+          <div class="svc-row-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="svc-row-info">
+            <div class="svc-row-name">Обмен валют</div>
+            <div class="svc-row-sub">TON → RUB, USDT → RUB и обратно</div>
+          </div>
+          <div class="svc-row-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="svc-row">
+          <div class="svc-row-icon">
+            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          </div>
+          <div class="svc-row-info">
+            <div class="svc-row-name">Telegram Premium</div>
+            <div class="svc-row-sub">3, 6, 12 месяцев — лучшая цена</div>
+          </div>
+          <div class="svc-row-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="svc-row">
+          <div class="svc-row-icon">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div class="svc-row-info">
+            <div class="svc-row-name">Telegram Stars</div>
+            <div class="svc-row-sub">100 / 500 / 1000 / 5000 Stars</div>
+          </div>
+          <div class="svc-row-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="svc-row">
+          <div class="svc-row-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div class="svc-row-info">
+            <div class="svc-row-name">KYC Верификации</div>
+            <div class="svc-row-sub">Bybit, Binance, OKX, Bitget</div>
+          </div>
+          <div class="svc-row-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="svc-row">
+          <div class="svc-row-icon">
+            <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          </div>
+          <div class="svc-row-info">
+            <div class="svc-row-name">Донат в игры</div>
+            <div class="svc-row-sub">Free Fire, PUBG, Steam, Google Play</div>
+          </div>
+          <div class="svc-row-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WALLET -->
+    <div class="page" id="page-wallet">
+      <div class="topbar">
+        <span class="topbar-logo">КОШЕЛЬКИ</span>
+      </div>
+      <div class="wallet-card">
+        <div class="wc-label">ОБЩИЙ БАЛАНС</div>
+        <div class="wc-amount">$0.00</div>
+        <div class="wc-sub">Подключите кошелёк для отображения</div>
+      </div>
+      <button class="wallet-connect-btn">Подключить кошелёк</button>
+      <div class="section-title">Поддерживаемые кошельки</div>
+      <div class="wallet-list">
+        <div class="wallet-item">
+          <div class="wallet-dot" style="background:#0098ea"></div>
+          <div class="wallet-item-name">Tonkeeper</div>
+          <div class="wallet-item-tag">TON Connect</div>
+        </div>
+        <div class="wallet-item">
+          <div class="wallet-dot" style="background:#45AEF5"></div>
+          <div class="wallet-item-name">MyTonWallet</div>
+          <div class="wallet-item-tag">TON Connect</div>
+        </div>
+        <div class="wallet-item">
+          <div class="wallet-dot" style="background:#564CE2"></div>
+          <div class="wallet-item-name">Tonhub</div>
+          <div class="wallet-item-tag">TON Connect</div>
+        </div>
+        <div class="wallet-item">
+          <div class="wallet-dot" style="background:#2ea3f2"></div>
+          <div class="wallet-item-name">Telegram Wallet</div>
+          <div class="wallet-item-tag">TON Connect</div>
+        </div>
+        <div class="wallet-item">
+          <div class="wallet-dot" style="background:#6C6AFF"></div>
+          <div class="wallet-item-name">OpenMask</div>
+          <div class="wallet-item-tag">TON Connect</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="page" id="page-profile">
+      <div class="profile-head">
+        <div class="profile-ava">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="profile-name" id="p-name">Пользователь</div>
+        <div class="profile-tag" id="p-tag">@username</div>
+      </div>
+      <div class="profile-stats">
+        <div class="stat-card">
+          <div class="stat-val">0</div>
+          <div class="stat-lbl">Заказов</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">$0</div>
+          <div class="stat-lbl">Покупок</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">0</div>
+          <div class="stat-lbl">KYC</div>
+        </div>
+      </div>
+      <div class="section-title">Аккаунт</div>
+      <div class="profile-grid">
+        <div class="profile-row">
+          <span class="profile-row-label">Telegram ID</span>
+          <span class="profile-row-value" id="p-id">—</span>
+        </div>
+        <div class="profile-row">
+          <span class="profile-row-label">Дата регистрации</span>
+          <span class="profile-row-value">Сегодня</span>
+        </div>
+        <div class="profile-row">
+          <span class="profile-row-label">Статус</span>
+          <span class="profile-row-value" style="color:#4a4a4a">Новый клиент</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-mono">
+      <button class="nav-btn active" onclick="switchPage('home')" id="nav-home">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Главная
+      </button>
+      <button class="nav-btn" onclick="switchPage('services')" id="nav-services">
+        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Услуги
+      </button>
+      <button class="nav-btn" onclick="switchPage('wallet')" id="nav-wallet">
+        <svg viewBox="0 0 24 24"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+        Кошельки
+      </button>
+      <button class="nav-btn" onclick="switchPage('profile')" id="nav-profile">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Профиль
+      </button>
+    </div>
+  </nav>
+</div>
+
+<script>
+const pages = { home: 'page-home', services: 'page-services', wallet: 'page-wallet', profile: 'page-profile' };
+const navs = { home: 'nav-home', services: 'nav-services', wallet: 'nav-wallet', profile: 'nav-profile' };
+let current = 'home';
+
+function switchPage(name) {
+  if (name === current) return;
+  document.getElementById(pages[current]).classList.remove('active');
+  document.getElementById(navs[current]).classList.remove('active');
+  document.getElementById(pages[name]).classList.add('active');
+  document.getElementById(navs[name]).classList.add('active');
+  current = name;
+}
+
+// Telegram SDK init
+window.addEventListener('load', () => {
+  if (window.Telegram && window.Telegram.WebApp) {
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+    const u = tg.initDataUnsafe?.user;
+    if (u) {
+      document.getElementById('p-name').textContent = [u.first_name, u.last_name].filter(Boolean).join(' ') || 'Пользователь';
+      document.getElementById('p-tag').textContent = u.username ? '@' + u.username : 'Telegram User';
+      document.getElementById('p-id').textContent = u.id || '—';
+    }
+  }
+  // Splash
+  setTimeout(() => {
+    const splash = document.getElementById('splash');
+    splash.style.opacity = '0';
+    setTimeout(() => {
+      splash.style.display = 'none';
+      document.getElementById('app').classList.add('visible');
+    }, 500);
+  }, 2000);
+});
+</script>
+</body>
+</html>

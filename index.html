@@ -2,281 +2,199 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>ESCOBAR</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #0A0A0A;
-  --card: #121212;
-  --card2: #161616;
-  --border: rgba(255,255,255,0.07);
-  --text: #ffffff;
-  --muted: #555;
-  --muted2: #333;
-  --accent: #ffffff;
-  --nav-h: 72px;
-}
+:root{--bg:#0A0A0A;--card:#111;--card2:#161616;--border:rgba(255,255,255,0.07);--text:#fff;--muted:#444;--accent:#2AABEE;--nav-h:72px;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;height:100%;overflow:hidden;}
 
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+/* SPLASH */
+#splash{position:fixed;inset:0;z-index:999;background:#0A0A0A;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity 0.5s ease;}
+.s-logo{font-family:'Unbounded',sans-serif;font-size:28px;font-weight:700;letter-spacing:6px;color:#fff;animation:fadeUp 0.6s ease forwards;}
+.s-sub{font-size:12px;color:#444;letter-spacing:1.5px;animation:fadeUp 0.6s 0.15s ease both;}
+.s-bar{margin-top:32px;width:48px;height:2px;background:#1e1e1e;border-radius:1px;overflow:hidden;animation:fadeUp 0.6s 0.25s ease both;}
+.s-fill{height:100%;background:#fff;border-radius:1px;animation:fill 1.8s ease forwards;}
+@keyframes fill{from{width:0}to{width:100%}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-html, body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Inter', sans-serif;
-  height: 100%;
-  overflow: hidden;
-}
+/* WELCOME SCREEN */
+#welcome{position:fixed;inset:0;z-index:500;background:#0A0A0A;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;opacity:0;pointer-events:none;transition:opacity 0.4s;}
+#welcome.show{opacity:1;pointer-events:all;}
+.wl-logo{font-family:'Unbounded',sans-serif;font-size:22px;font-weight:700;letter-spacing:5px;margin-bottom:12px;}
+.wl-ring{width:80px;height:80px;border-radius:50%;border:1.5px solid #222;display:flex;align-items:center;justify-content:center;margin:0 auto 28px;}
+.wl-ring svg{width:36px;height:36px;stroke:rgba(255,255,255,0.3);fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;}
+.wl-title{font-family:'Unbounded',sans-serif;font-size:20px;font-weight:500;text-align:center;line-height:1.4;margin-bottom:10px;}
+.wl-sub{font-size:13px;color:#444;text-align:center;line-height:1.6;margin-bottom:40px;}
+.wl-btn{width:100%;padding:16px;border-radius:14px;background:var(--accent);border:none;color:#fff;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:all 0.18s;letter-spacing:0.3px;}
+.wl-btn:active{opacity:0.85;transform:scale(0.98);}
 
-/* ── SPLASH ── */
-#splash {
-  position: fixed; inset: 0; z-index: 999;
-  background: #0A0A0A;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 14px;
-  transition: opacity 0.5s ease;
-}
-#splash .s-logo {
-  font-family: 'Unbounded', sans-serif;
-  font-size: 28px; font-weight: 700;
-  letter-spacing: 6px; color: #fff;
-  animation: fadeUp 0.6s ease forwards;
-}
-#splash .s-sub {
-  font-size: 12px; color: #444; letter-spacing: 1.5px;
-  animation: fadeUp 0.6s 0.15s ease both;
-}
-#splash .s-bar {
-  margin-top: 32px;
-  width: 48px; height: 2px; background: #1e1e1e; border-radius: 1px; overflow: hidden;
-  animation: fadeUp 0.6s 0.25s ease both;
-}
-#splash .s-fill {
-  height: 100%; background: #fff; border-radius: 1px;
-  animation: fill 1.8s ease forwards;
-}
-@keyframes fill { from { width: 0 } to { width: 100% } }
-@keyframes fadeUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+/* SHELL */
+#app{height:100vh;display:flex;flex-direction:column;opacity:0;transition:opacity 0.4s ease;}
+#app.visible{opacity:1;}
+.pages{flex:1;overflow:hidden;position:relative;}
+.page{position:absolute;inset:0;overflow-y:auto;padding-bottom:calc(var(--nav-h)+8px);opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity 0.22s ease,transform 0.22s ease;}
+.page.active{opacity:1;pointer-events:all;transform:translateY(0);}
+.page::-webkit-scrollbar{display:none;}
 
-/* ── APP SHELL ── */
-#app { height: 100vh; display: flex; flex-direction: column; opacity: 0; transition: opacity 0.4s ease; }
-#app.visible { opacity: 1; }
+/* NAV */
+nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;align-items:center;justify-content:center;padding:0 12px 8px;z-index:100;}
+.nav-mono{display:flex;align-items:center;background:rgba(255,255,255,0.06);backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);border:0.5px solid rgba(255,255,255,0.1);border-radius:100px;padding:6px;gap:2px;width:100%;max-width:380px;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:9px 6px;border-radius:100px;border:none;background:transparent;cursor:pointer;color:rgba(255,255,255,0.35);font-size:9px;font-family:'Inter',sans-serif;font-weight:400;letter-spacing:0.3px;transition:all 0.2s ease;}
+.nav-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;transition:all 0.2s;}
+.nav-btn.active{background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.95);}
+.nav-btn:active{transform:scale(0.94);}
 
-/* ── PAGES ── */
-.pages { flex: 1; overflow: hidden; position: relative; }
-.page { position: absolute; inset: 0; overflow-y: auto; padding-bottom: calc(var(--nav-h) + 8px); opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity 0.22s ease, transform 0.22s ease; }
-.page.active { opacity: 1; pointer-events: all; transform: translateY(0); }
-.page::-webkit-scrollbar { display: none; }
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;}
+.topbar-logo{font-family:'Unbounded',sans-serif;font-size:14px;font-weight:500;letter-spacing:3px;color:#fff;}
+.topbar-avatar{width:34px;height:34px;border-radius:50%;background:#1e1e1e;border:0.5px solid #2a2a2a;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.topbar-avatar svg{width:16px;height:16px;stroke:rgba(255,255,255,0.3);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
 
-/* ── NAV BAR ── */
-nav {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  height: var(--nav-h);
-  display: flex; align-items: center; justify-content: center;
-  padding: 0 12px 8px;
-  background: transparent;
-  z-index: 100;
-}
+/* BANNER */
+.banner{margin:0 12px 16px;background:#111;border:0.5px solid #222;border-radius:20px;padding:20px;position:relative;overflow:hidden;}
+.banner::before{content:'';position:absolute;top:-30px;right:-20px;width:100px;height:100px;background:radial-gradient(circle,rgba(255,255,255,0.04) 0%,transparent 70%);border-radius:50%;}
+.banner-sub{font-size:10px;color:#444;letter-spacing:1px;margin-bottom:8px;}
+.banner-title{font-family:'Unbounded',sans-serif;font-size:19px;font-weight:500;line-height:1.3;color:#fff;}
+.banner-title span{color:#555;}
 
-.nav-mono {
-  display: flex;
-  align-items: center;
-  background: rgba(255,255,255,0.06);
-  backdrop-filter: blur(20px) saturate(1.5);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
-  border: 0.5px solid rgba(255,255,255,0.1);
-  border-radius: 100px;
-  padding: 6px 6px;
-  gap: 2px;
-  width: 100%;
-  max-width: 360px;
-}
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 12px 16px;}
+.stat-card{background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:14px 10px;text-align:center;}
+.stat-val{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:500;color:#fff;margin-bottom:4px;transition:all 0.4s ease;}
+.stat-val.bump{transform:scale(1.25);color:#ccc;}
+.stat-lbl{font-size:8.5px;color:#444;letter-spacing:0.5px;line-height:1.4;}
 
-.nav-btn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  padding: 9px 6px;
-  border-radius: 100px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: rgba(255,255,255,0.35);
-  font-size: 9px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 400;
-  letter-spacing: 0.3px;
-  transition: all 0.2s ease;
-  position: relative;
-}
+/* SECTION */
+.section-title{font-size:11px;font-weight:500;color:#555;letter-spacing:1px;text-transform:uppercase;padding:0 16px 10px;}
 
-.nav-btn svg {
-  width: 20px; height: 20px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: all 0.2s ease;
-}
+/* HOME SERVICE CARDS */
+.services{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px 16px;}
+.svc-card{background:#111;border:0.5px solid #1e1e1e;border-radius:16px;padding:16px;cursor:pointer;transition:all 0.18s;}
+.svc-card:active{transform:scale(0.97);background:#161616;}
+.svc-icon{width:38px;height:38px;border-radius:12px;background:#1a1a1a;border:0.5px solid #252525;display:flex;align-items:center;justify-content:center;margin-bottom:10px;}
+.svc-icon svg{width:18px;height:18px;stroke:rgba(255,255,255,0.6);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.svc-name{font-size:12px;font-weight:500;color:#ddd;margin-bottom:3px;}
+.svc-desc{font-size:10px;color:#444;line-height:1.4;}
 
-.nav-btn.active {
-  background: rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.95);
-}
+/* SERVICES PAGE */
+.svc-list{padding:0 12px;display:flex;flex-direction:column;gap:8px;}
+.svc-row{background:#111;border:0.5px solid #1e1e1e;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:background 0.15s;}
+.svc-row:active{background:#161616;}
+.svc-row-icon{width:42px;height:42px;border-radius:12px;background:#1a1a1a;border:0.5px solid #252525;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.svc-row-icon svg{width:20px;height:20px;stroke:rgba(255,255,255,0.55);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.svc-row-info{flex:1;}
+.svc-row-name{font-size:13px;font-weight:500;color:#e0e0e0;margin-bottom:3px;}
+.svc-row-sub{font-size:11px;color:#444;}
+.svc-row-arrow svg{width:16px;height:16px;stroke:#333;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 
-.nav-btn:active { transform: scale(0.94); }
+/* ORDERS PAGE */
+.filter-bar{display:flex;gap:6px;padding:0 12px 12px;overflow-x:auto;}
+.filter-bar::-webkit-scrollbar{display:none;}
+.filter-pill{flex-shrink:0;padding:7px 14px;border-radius:100px;border:0.5px solid #2a2a2a;background:transparent;color:#555;font-family:'Inter',sans-serif;font-size:11px;cursor:pointer;transition:all 0.18s;white-space:nowrap;}
+.filter-pill.active{border-color:var(--accent);color:var(--accent);}
+.filter-pill:active{opacity:0.7;}
+.order-list{padding:0 12px;display:flex;flex-direction:column;gap:8px;}
+.order-card{background:#111;border:0.5px solid #1e1e1e;border-radius:16px;padding:16px;}
+.order-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.order-num{font-family:'Unbounded',sans-serif;font-size:11px;color:#555;letter-spacing:0.5px;}
+.order-badge{font-size:10px;padding:4px 10px;border-radius:100px;}
+.badge-pending{background:rgba(255,180,0,0.1);color:#c8900a;border:0.5px solid rgba(255,180,0,0.2);}
+.badge-done{background:rgba(42,171,238,0.1);color:var(--accent);border:0.5px solid rgba(42,171,238,0.2);}
+.badge-cancelled{background:rgba(255,60,60,0.1);color:#c84a4a;border:0.5px solid rgba(255,60,60,0.2);}
+.order-service{font-size:13px;font-weight:500;color:#e0e0e0;margin-bottom:4px;}
+.order-meta{font-size:11px;color:#444;}
+.order-amount{font-family:'Unbounded',sans-serif;font-size:13px;color:#fff;margin-top:10px;padding-top:10px;border-top:0.5px solid #1e1e1e;}
+.orders-empty{text-align:center;padding:48px 24px;color:#333;font-size:13px;}
 
-/* ── TOP BAR ── */
-.topbar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px 10px;
-}
-.topbar-logo {
-  font-family: 'Unbounded', sans-serif;
-  font-size: 14px; font-weight: 500; letter-spacing: 3px; color: #fff;
-}
-.topbar-avatar {
-  width: 34px; height: 34px; border-radius: 50%;
-  background: #1e1e1e; border: 0.5px solid #2a2a2a;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; color: #555; overflow: hidden;
-}
-.topbar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+/* WALLET */
+.wallet-card{margin:0 12px 16px;background:#111;border:0.5px solid #1e1e1e;border-radius:20px;padding:24px;text-align:center;}
+.wc-label{font-size:10px;color:#444;letter-spacing:1px;margin-bottom:10px;}
+.wc-amount{font-family:'Unbounded',sans-serif;font-size:32px;font-weight:300;color:#fff;margin-bottom:4px;}
+.wc-sub{font-size:11px;color:#444;}
+.wallet-connect-btn{width:calc(100% - 24px);margin:0 12px 16px;padding:15px;border-radius:14px;background:var(--accent);border:none;color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.18s;letter-spacing:0.3px;}
+.wallet-connect-btn:active{opacity:0.85;transform:scale(0.98);}
+.wallet-list{padding:0 12px;display:flex;flex-direction:column;gap:6px;}
+.wallet-item{background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:13px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+.wallet-item:active{background:#161616;}
+.wallet-dot{width:8px;height:8px;border-radius:50%;}
+.wallet-item-name{font-size:13px;color:#ccc;flex:1;}
+.wallet-item-tag{font-size:10px;color:#444;background:#1a1a1a;padding:3px 8px;border-radius:6px;border:0.5px solid #252525;}
 
-/* ── BANNER ── */
-.banner {
-  margin: 0 12px 16px;
-  background: linear-gradient(135deg, #141414 0%, #111 100%);
-  border: 0.5px solid #222;
-  border-radius: 20px;
-  padding: 20px;
-  position: relative; overflow: hidden;
-}
-.banner::before {
-  content: '';
-  position: absolute; top: -30px; right: -20px;
-  width: 100px; height: 100px;
-  background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%);
-  border-radius: 50%;
-}
-.banner-sub { font-size: 10px; color: #444; letter-spacing: 1px; margin-bottom: 8px; }
-.banner-title { font-family: 'Unbounded', sans-serif; font-size: 19px; font-weight: 500; line-height: 1.3; color: #fff; }
-.banner-title span { color: #666; }
+/* PROFILE */
+.profile-head{display:flex;flex-direction:column;align-items:center;padding:20px 16px 24px;}
+.profile-ava{width:72px;height:72px;border-radius:50%;background:#1a1a1a;border:0.5px solid #2a2a2a;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+.profile-ava svg{width:30px;height:30px;stroke:rgba(255,255,255,0.2);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.profile-name{font-size:15px;font-weight:500;color:#fff;margin-bottom:3px;}
+.profile-tag{font-size:12px;color:#444;}
+.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 12px 16px;}
+.profile-grid{padding:0 12px;display:flex;flex-direction:column;gap:6px;}
+.profile-row{background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
+.profile-row-label{font-size:12px;color:#555;}
+.profile-row-value{font-size:12px;color:#ccc;}
 
-/* ── STATS ROW ── */
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 12px 16px; }
-.stat-card {
-  background: #111; border: 0.5px solid #1e1e1e; border-radius: 14px;
-  padding: 14px 10px; text-align: center;
-}
-.stat-val { font-family: 'Unbounded', sans-serif; font-size: 15px; font-weight: 500; color: #fff; margin-bottom: 4px; }
-.stat-lbl { font-size: 8.5px; color: #444; letter-spacing: 0.5px; line-height: 1.4; }
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s ease;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:#141414;border:0.5px solid #2a2a2a;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:420px;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.34,1.2,0.64,1);}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-handle{width:36px;height:3px;background:#2a2a2a;border-radius:2px;margin:0 auto 20px;}
+.modal-title{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:500;margin-bottom:6px;}
+.modal-sub{font-size:12px;color:#444;margin-bottom:20px;}
+.modal-input{width:100%;background:#1a1a1a;border:0.5px solid #2a2a2a;border-radius:12px;padding:13px 16px;color:#fff;font-family:'Inter',sans-serif;font-size:13px;outline:none;margin-bottom:10px;}
+.modal-input::placeholder{color:#333;}
+.modal-input:focus{border-color:#3a3a3a;}
+.modal-row{display:flex;gap:8px;}
+.modal-row .modal-input{flex:1;}
+.modal-btn{width:100%;padding:15px;border-radius:14px;border:none;background:var(--accent);color:#fff;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.18s;margin-top:6px;}
+.modal-btn:active{opacity:0.85;transform:scale(0.98);}
+.modal-btn.loading{opacity:0.5;pointer-events:none;}
+.modal-btn.success{background:#1a1a1a;border:0.5px solid #2a2a2a;color:#555;}
 
-/* ── SECTION ── */
-.section-title {
-  font-size: 11px; font-weight: 500; color: #555; letter-spacing: 1px;
-  text-transform: uppercase; padding: 0 16px 10px;
-}
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1e1e1e;border:0.5px solid #2a2a2a;border-radius:100px;padding:10px 20px;font-size:12px;color:#ccc;z-index:300;transition:transform 0.3s cubic-bezier(0.34,1.2,0.64,1);white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
 
-/* ── SERVICE CARDS ── */
-.services { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 12px 16px; }
-.svc-card {
-  background: #111; border: 0.5px solid #1e1e1e; border-radius: 16px;
-  padding: 16px; cursor: pointer; transition: all 0.18s;
-}
-.svc-card:active { transform: scale(0.97); background: #161616; }
-.svc-icon {
-  width: 38px; height: 38px; border-radius: 12px;
-  background: #1a1a1a; border: 0.5px solid #252525;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 10px;
-}
-.svc-icon svg { width: 18px; height: 18px; stroke: rgba(255,255,255,0.6); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.svc-name { font-size: 12px; font-weight: 500; color: #ddd; margin-bottom: 3px; }
-.svc-desc { font-size: 10px; color: #444; line-height: 1.4; }
-
-/* ── SERVICES PAGE ── */
-.svc-list { padding: 0 12px; display: flex; flex-direction: column; gap: 8px; }
-.svc-row {
-  background: #111; border: 0.5px solid #1e1e1e; border-radius: 16px;
-  padding: 16px; display: flex; align-items: center; gap: 14px; cursor: pointer;
-  transition: background 0.15s;
-}
-.svc-row:active { background: #161616; }
-.svc-row-icon { width: 42px; height: 42px; border-radius: 12px; background: #1a1a1a; border: 0.5px solid #252525; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.svc-row-icon svg { width: 20px; height: 20px; stroke: rgba(255,255,255,0.55); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.svc-row-info { flex: 1; }
-.svc-row-name { font-size: 13px; font-weight: 500; color: #e0e0e0; margin-bottom: 3px; }
-.svc-row-sub { font-size: 11px; color: #444; }
-.svc-row-arrow { color: #333; }
-.svc-row-arrow svg { width: 16px; height: 16px; stroke: #333; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-
-/* ── WALLET PAGE ── */
-.wallet-card {
-  margin: 0 12px 16px;
-  background: #111; border: 0.5px solid #1e1e1e; border-radius: 20px;
-  padding: 24px; text-align: center;
-}
-.wallet-card .wc-label { font-size: 10px; color: #444; letter-spacing: 1px; margin-bottom: 10px; }
-.wallet-card .wc-amount { font-family: 'Unbounded', sans-serif; font-size: 32px; font-weight: 300; color: #fff; margin-bottom: 4px; }
-.wallet-card .wc-sub { font-size: 11px; color: #444; }
-.wallet-connect-btn {
-  width: calc(100% - 24px); margin: 0 12px 16px;
-  padding: 15px; border-radius: 14px;
-  background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.12);
-  color: #fff; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
-  cursor: pointer; transition: all 0.18s; letter-spacing: 0.3px;
-}
-.wallet-connect-btn:active { background: rgba(255,255,255,0.12); transform: scale(0.98); }
-.wallet-list { padding: 0 12px; display: flex; flex-direction: column; gap: 6px; }
-.wallet-item {
-  background: #111; border: 0.5px solid #1e1e1e; border-radius: 14px;
-  padding: 13px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;
-}
-.wallet-item:active { background: #161616; }
-.wallet-dot { width: 8px; height: 8px; border-radius: 50%; background: #2a2a2a; }
-.wallet-item-name { font-size: 13px; color: #ccc; flex: 1; }
-.wallet-item-tag { font-size: 10px; color: #444; background: #1a1a1a; padding: 3px 8px; border-radius: 6px; border: 0.5px solid #252525; }
-
-/* ── PROFILE PAGE ── */
-.profile-head {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 20px 16px 24px;
-}
-.profile-ava {
-  width: 72px; height: 72px; border-radius: 50%;
-  background: #1a1a1a; border: 0.5px solid #2a2a2a;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 26px; color: #333; margin-bottom: 12px;
-}
-.profile-name { font-size: 15px; font-weight: 500; color: #fff; margin-bottom: 3px; }
-.profile-tag { font-size: 12px; color: #444; }
-.profile-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 12px 16px; }
-.profile-grid { padding: 0 12px; display: flex; flex-direction: column; gap: 6px; }
-.profile-row {
-  background: #111; border: 0.5px solid #1e1e1e; border-radius: 14px;
-  padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
-}
-.profile-row-label { font-size: 12px; color: #666; }
-.profile-row-value { font-size: 12px; color: #ccc; }
-
-/* ── SCROLLBAR ── */
-* { scrollbar-width: none; }
+*{scrollbar-width:none;}
 </style>
 </head>
 <body>
 
-<!-- SPLASH -->
 <div id="splash">
   <div class="s-logo">ESCOBAR</div>
   <div class="s-sub">№1 магазин маркет-услуг в Молдове</div>
   <div class="s-bar"><div class="s-fill"></div></div>
+</div>
+
+<!-- WELCOME -->
+<div id="welcome">
+  <div class="wl-logo">ESCOBAR</div>
+  <div class="wl-ring">
+    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  </div>
+  <div class="wl-title">Добро пожаловать<br>в ESCOBAR</div>
+  <div class="wl-sub">Лучший магазин маркет-услуг<br>в Молдове — быстро, надёжно, анонимно</div>
+  <button class="wl-btn" onclick="enterApp()">Открыть магазин</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Оформить заказ</div>
+    <div class="modal-sub"  id="modal-sub">Заполните данные</div>
+    <input class="modal-input" id="modal-detail"  placeholder="Детали заказа" />
+    <div class="modal-row">
+      <input class="modal-input" id="modal-amount"   placeholder="Сумма" type="number" inputmode="decimal"/>
+      <input class="modal-input" id="modal-currency" placeholder="Валюта (RUB/TON/USDT)" value="RUB"/>
+    </div>
+    <input class="modal-input" id="modal-contact" placeholder="Ваш @username или телефон"/>
+    <button class="modal-btn" id="modal-submit" onclick="submitOrder()">Отправить заявку</button>
+  </div>
 </div>
 
 <!-- APP -->
@@ -287,128 +205,87 @@ nav {
     <div class="page active" id="page-home">
       <div class="topbar">
         <span class="topbar-logo">ESCOBAR</span>
-        <div class="topbar-avatar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
+        <div class="topbar-avatar"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
       </div>
-
       <div class="banner">
         <div class="banner-sub">ДОБРО ПОЖАЛОВАТЬ</div>
         <div class="banner-title">ESCOBAR<br><span>Market Services</span></div>
       </div>
-
       <div class="stats">
-        <div class="stat-card">
-          <div class="stat-val">4.2K</div>
-          <div class="stat-lbl">Заказов выполнено</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">890</div>
-          <div class="stat-lbl">Активных клиентов</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">99%</div>
-          <div class="stat-lbl">Успешных обменов</div>
-        </div>
+        <div class="stat-card"><div class="stat-val" id="stat-orders">—</div><div class="stat-lbl">Выполнено заказов</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-clients">—</div><div class="stat-lbl">Активных клиентов</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-rate">—</div><div class="stat-lbl">Успешных обменов</div></div>
       </div>
-
       <div class="section-title">Популярные услуги</div>
       <div class="services">
-        <div class="svc-card" onclick="switchPage('services')">
-          <div class="svc-icon">
-            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-          </div>
-          <div class="svc-name">Обмен валют</div>
-          <div class="svc-desc">TON, USDT, BTC, ETH</div>
+        <div class="svc-card" onclick="openModal('Обмен валют','exchange','TON, USDT → RUB и обратно')">
+          <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+          <div class="svc-name">Обмен валют</div><div class="svc-desc">TON, USDT, BTC, ETH</div>
         </div>
-        <div class="svc-card" onclick="switchPage('services')">
-          <div class="svc-icon">
-            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-          </div>
-          <div class="svc-name">Telegram</div>
-          <div class="svc-desc">Premium, Stars, Gifts</div>
+        <div class="svc-card" onclick="openModal('Telegram Premium','telegram','3, 6, 12 месяцев')">
+          <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+          <div class="svc-name">Telegram</div><div class="svc-desc">Premium, Stars, Gifts</div>
         </div>
-        <div class="svc-card" onclick="switchPage('services')">
-          <div class="svc-icon">
-            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </div>
-          <div class="svc-name">KYC</div>
-          <div class="svc-desc">Binance, Bybit, OKX</div>
+        <div class="svc-card" onclick="openModal('KYC Верификация','kyc','Bybit, Binance, OKX')">
+          <div class="svc-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="svc-name">KYC</div><div class="svc-desc">Binance, Bybit, OKX</div>
         </div>
-        <div class="svc-card" onclick="switchPage('services')">
-          <div class="svc-icon">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <div class="svc-name">Донат</div>
-          <div class="svc-desc">Steam, Google Play</div>
+        <div class="svc-card" onclick="openModal('Донат','donate','Free Fire, PUBG, Steam')">
+          <div class="svc-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div class="svc-name">Донат</div><div class="svc-desc">Steam, Google Play</div>
         </div>
       </div>
     </div>
 
     <!-- SERVICES -->
     <div class="page" id="page-services">
-      <div class="topbar">
-        <span class="topbar-logo">УСЛУГИ</span>
-      </div>
+      <div class="topbar"><span class="topbar-logo">УСЛУГИ</span></div>
       <div class="svc-list">
-        <div class="svc-row">
-          <div class="svc-row-icon">
-            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-          </div>
-          <div class="svc-row-info">
-            <div class="svc-row-name">Обмен валют</div>
-            <div class="svc-row-sub">TON → RUB, USDT → RUB и обратно</div>
-          </div>
+        <div class="svc-row" onclick="openModal('Обмен валют','exchange','TON → RUB, USDT → RUB')">
+          <div class="svc-row-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+          <div class="svc-row-info"><div class="svc-row-name">Обмен валют</div><div class="svc-row-sub">TON → RUB, USDT → RUB и обратно</div></div>
           <div class="svc-row-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
-        <div class="svc-row">
-          <div class="svc-row-icon">
-            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-          </div>
-          <div class="svc-row-info">
-            <div class="svc-row-name">Telegram Premium</div>
-            <div class="svc-row-sub">3, 6, 12 месяцев — лучшая цена</div>
-          </div>
+        <div class="svc-row" onclick="openModal('Telegram Premium','telegram','3, 6 или 12 месяцев')">
+          <div class="svc-row-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+          <div class="svc-row-info"><div class="svc-row-name">Telegram Premium</div><div class="svc-row-sub">3, 6, 12 месяцев — лучшая цена</div></div>
           <div class="svc-row-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
-        <div class="svc-row">
-          <div class="svc-row-icon">
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          </div>
-          <div class="svc-row-info">
-            <div class="svc-row-name">Telegram Stars</div>
-            <div class="svc-row-sub">100 / 500 / 1000 / 5000 Stars</div>
-          </div>
+        <div class="svc-row" onclick="openModal('Telegram Stars','telegram','100 / 500 / 1000 Stars')">
+          <div class="svc-row-icon"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div class="svc-row-info"><div class="svc-row-name">Telegram Stars</div><div class="svc-row-sub">100 / 500 / 1000 / 5000 Stars</div></div>
           <div class="svc-row-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
-        <div class="svc-row">
-          <div class="svc-row-icon">
-            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </div>
-          <div class="svc-row-info">
-            <div class="svc-row-name">KYC Верификации</div>
-            <div class="svc-row-sub">Bybit, Binance, OKX, Bitget</div>
-          </div>
+        <div class="svc-row" onclick="openModal('KYC Верификация','kyc','Укажите биржу и детали')">
+          <div class="svc-row-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="svc-row-info"><div class="svc-row-name">KYC Верификации</div><div class="svc-row-sub">Bybit, Binance, OKX, Bitget</div></div>
           <div class="svc-row-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
-        <div class="svc-row">
-          <div class="svc-row-icon">
-            <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-          </div>
-          <div class="svc-row-info">
-            <div class="svc-row-name">Донат в игры</div>
-            <div class="svc-row-sub">Free Fire, PUBG, Steam, Google Play</div>
-          </div>
+        <div class="svc-row" onclick="openModal('Донат в игры','donate','Free Fire, PUBG, Steam, Google Play')">
+          <div class="svc-row-icon"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+          <div class="svc-row-info"><div class="svc-row-name">Донат в игры</div><div class="svc-row-sub">Free Fire, PUBG, Steam, Google Play</div></div>
           <div class="svc-row-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
       </div>
     </div>
 
+    <!-- ORDERS -->
+    <div class="page" id="page-orders">
+      <div class="topbar"><span class="topbar-logo">МОИ ЗАКАЗЫ</span></div>
+      <div class="filter-bar" id="order-filters">
+        <button class="filter-pill active" data-status="all"      onclick="filterOrders(this)">Все</button>
+        <button class="filter-pill"        data-status="pending"  onclick="filterOrders(this)">В ожидании</button>
+        <button class="filter-pill"        data-status="done"     onclick="filterOrders(this)">Выполнено</button>
+        <button class="filter-pill"        data-status="cancelled"onclick="filterOrders(this)">Отменённые</button>
+      </div>
+      <div class="order-list" id="order-list">
+        <div class="orders-empty">Загрузка...</div>
+      </div>
+    </div>
+
     <!-- WALLET -->
     <div class="page" id="page-wallet">
-      <div class="topbar">
-        <span class="topbar-logo">КОШЕЛЬКИ</span>
-      </div>
+      <div class="topbar"><span class="topbar-logo">КОШЕЛЬКИ</span></div>
       <div class="wallet-card">
         <div class="wc-label">ОБЩИЙ БАЛАНС</div>
         <div class="wc-amount">$0.00</div>
@@ -417,71 +294,31 @@ nav {
       <button class="wallet-connect-btn">Подключить кошелёк</button>
       <div class="section-title">Поддерживаемые кошельки</div>
       <div class="wallet-list">
-        <div class="wallet-item">
-          <div class="wallet-dot" style="background:#0098ea"></div>
-          <div class="wallet-item-name">Tonkeeper</div>
-          <div class="wallet-item-tag">TON Connect</div>
-        </div>
-        <div class="wallet-item">
-          <div class="wallet-dot" style="background:#45AEF5"></div>
-          <div class="wallet-item-name">MyTonWallet</div>
-          <div class="wallet-item-tag">TON Connect</div>
-        </div>
-        <div class="wallet-item">
-          <div class="wallet-dot" style="background:#564CE2"></div>
-          <div class="wallet-item-name">Tonhub</div>
-          <div class="wallet-item-tag">TON Connect</div>
-        </div>
-        <div class="wallet-item">
-          <div class="wallet-dot" style="background:#2ea3f2"></div>
-          <div class="wallet-item-name">Telegram Wallet</div>
-          <div class="wallet-item-tag">TON Connect</div>
-        </div>
-        <div class="wallet-item">
-          <div class="wallet-dot" style="background:#6C6AFF"></div>
-          <div class="wallet-item-name">OpenMask</div>
-          <div class="wallet-item-tag">TON Connect</div>
-        </div>
+        <div class="wallet-item"><div class="wallet-dot" style="background:#0098ea"></div><div class="wallet-item-name">Tonkeeper</div><div class="wallet-item-tag">TON Connect</div></div>
+        <div class="wallet-item"><div class="wallet-dot" style="background:#45AEF5"></div><div class="wallet-item-name">MyTonWallet</div><div class="wallet-item-tag">TON Connect</div></div>
+        <div class="wallet-item"><div class="wallet-dot" style="background:#564CE2"></div><div class="wallet-item-name">Tonhub</div><div class="wallet-item-tag">TON Connect</div></div>
+        <div class="wallet-item"><div class="wallet-dot" style="background:#2ea3f2"></div><div class="wallet-item-name">Telegram Wallet</div><div class="wallet-item-tag">TON Connect</div></div>
+        <div class="wallet-item"><div class="wallet-dot" style="background:#6C6AFF"></div><div class="wallet-item-name">OpenMask</div><div class="wallet-item-tag">TON Connect</div></div>
       </div>
     </div>
 
     <!-- PROFILE -->
     <div class="page" id="page-profile">
       <div class="profile-head">
-        <div class="profile-ava">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
+        <div class="profile-ava"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
         <div class="profile-name" id="p-name">Пользователь</div>
-        <div class="profile-tag" id="p-tag">@username</div>
+        <div class="profile-tag"  id="p-tag">@username</div>
       </div>
       <div class="profile-stats">
-        <div class="stat-card">
-          <div class="stat-val">0</div>
-          <div class="stat-lbl">Заказов</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">$0</div>
-          <div class="stat-lbl">Покупок</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">0</div>
-          <div class="stat-lbl">KYC</div>
-        </div>
+        <div class="stat-card"><div class="stat-val" id="my-orders">0</div><div class="stat-lbl">Заказов</div></div>
+        <div class="stat-card"><div class="stat-val" id="my-spent">$0</div><div class="stat-lbl">Потрачено</div></div>
+        <div class="stat-card"><div class="stat-val" id="my-kyc">0</div><div class="stat-lbl">KYC</div></div>
       </div>
       <div class="section-title">Аккаунт</div>
       <div class="profile-grid">
-        <div class="profile-row">
-          <span class="profile-row-label">Telegram ID</span>
-          <span class="profile-row-value" id="p-id">—</span>
-        </div>
-        <div class="profile-row">
-          <span class="profile-row-label">Дата регистрации</span>
-          <span class="profile-row-value">Сегодня</span>
-        </div>
-        <div class="profile-row">
-          <span class="profile-row-label">Статус</span>
-          <span class="profile-row-value" style="color:#4a4a4a">Новый клиент</span>
-        </div>
+        <div class="profile-row"><span class="profile-row-label">Telegram ID</span><span class="profile-row-value" id="p-id">—</span></div>
+        <div class="profile-row"><span class="profile-row-label">Дата регистрации</span><span class="profile-row-value" id="p-reg">—</span></div>
+        <div class="profile-row"><span class="profile-row-label">Статус</span><span class="profile-row-value" id="p-status" style="color:#3a3a3a">Новый клиент</span></div>
       </div>
     </div>
 
@@ -495,8 +332,12 @@ nav {
         Главная
       </button>
       <button class="nav-btn" onclick="switchPage('services')" id="nav-services">
-        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         Услуги
+      </button>
+      <button class="nav-btn" onclick="switchPage('orders')" id="nav-orders">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Заказы
       </button>
       <button class="nav-btn" onclick="switchPage('wallet')" id="nav-wallet">
         <svg viewBox="0 0 24 24"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
@@ -511,39 +352,228 @@ nav {
 </div>
 
 <script>
-const pages = { home: 'page-home', services: 'page-services', wallet: 'page-wallet', profile: 'page-profile' };
-const navs = { home: 'nav-home', services: 'nav-services', wallet: 'nav-wallet', profile: 'nav-profile' };
-let current = 'home';
+const API = "https://YOUR_DOMAIN_OR_IP:8090"; // ← ЗАМЕНИТЬ
+
+let tgUser = {id:"",username:"",first_name:""};
+let currentService = "", currentCategory = "";
+let allOrders = [];
+
+// ── NAV ──────────────────────────────────────────────────
+const PAGES = {home:"page-home",services:"page-services",orders:"page-orders",wallet:"page-wallet",profile:"page-profile"};
+const NAVS  = {home:"nav-home", services:"nav-services", orders:"nav-orders", wallet:"nav-wallet", profile:"nav-profile"};
+let current = "home";
 
 function switchPage(name) {
   if (name === current) return;
-  document.getElementById(pages[current]).classList.remove('active');
-  document.getElementById(navs[current]).classList.remove('active');
-  document.getElementById(pages[name]).classList.add('active');
-  document.getElementById(navs[name]).classList.add('active');
+  document.getElementById(PAGES[current]).classList.remove("active");
+  document.getElementById(NAVS[current]).classList.remove("active");
+  document.getElementById(PAGES[name]).classList.add("active");
+  document.getElementById(NAVS[name]).classList.add("active");
   current = name;
+  if (name === "orders") loadUserOrders("all");
 }
 
-// Telegram SDK init
-window.addEventListener('load', () => {
+// ── STATS ─────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const d = await apiFetch("/stats");
+    animateStat("stat-orders",  d.orders_done);
+    animateStat("stat-clients", d.active_clients);
+    document.getElementById("stat-rate").textContent = d.success_rate + "%";
+  } catch {
+    document.getElementById("stat-orders").textContent  = "4.2K";
+    document.getElementById("stat-clients").textContent = "890";
+    document.getElementById("stat-rate").textContent    = "99%";
+  }
+}
+
+function animateStat(id, target) {
+  const el = document.getElementById(id);
+  const start = parseInt(el.textContent) || 0;
+  if (start === target) return;
+  el.classList.add("bump");
+  setTimeout(() => el.classList.remove("bump"), 400);
+  const step = Math.max(1, Math.ceil(Math.abs(target-start)/20));
+  let cur = start;
+  const iv = setInterval(() => {
+    cur = cur < target ? Math.min(cur+step,target) : Math.max(cur-step,target);
+    el.textContent = cur >= 1000 ? (cur/1000).toFixed(1)+"K" : cur;
+    if (cur === target) clearInterval(iv);
+  }, 40);
+}
+
+setInterval(loadStats, 10000);
+
+// ── USER ──────────────────────────────────────────────────
+async function registerAndLoadUser() {
+  try {
+    const d = await apiFetch("/user/register","POST",{
+      user_id:    tgUser.id,
+      username:   tgUser.username,
+      first_name: tgUser.first_name
+    });
+    updateProfileUI(d);
+  } catch(e) { console.warn(e); }
+}
+
+function updateProfileUI(d) {
+  if (!d) return;
+  document.getElementById("my-orders").textContent = d.total_orders || 0;
+  document.getElementById("my-spent").textContent  = "$" + (d.total_spent || 0).toFixed(0);
+  document.getElementById("my-kyc").textContent    = d.kyc_count || 0;
+  if (d.registered_at) {
+    const dt = new Date(d.registered_at.replace(" ","T"));
+    document.getElementById("p-reg").textContent = dt.toLocaleDateString("ru-RU",{day:"2-digit",month:"long",year:"numeric"});
+  }
+  const orders = d.total_orders || 0;
+  const status = orders >= 10 ? "Постоянный клиент" : orders >= 3 ? "Активный клиент" : "Новый клиент";
+  const col    = orders >= 10 ? "#2AABEE" : orders >= 3 ? "#aaa" : "#3a3a3a";
+  const ps = document.getElementById("p-status");
+  ps.textContent = status; ps.style.color = col;
+}
+
+// ── ORDERS ────────────────────────────────────────────────
+async function loadUserOrders(status) {
+  const list = document.getElementById("order-list");
+  list.innerHTML = '<div class="orders-empty">Загрузка...</div>';
+  try {
+    const url = "/user/orders?user_id=" + tgUser.id + (status !== "all" ? "&status=" + status : "");
+    allOrders = await apiFetch(url);
+    renderOrders(allOrders);
+  } catch { list.innerHTML = '<div class="orders-empty">Ошибка загрузки</div>'; }
+}
+
+function renderOrders(orders) {
+  const list = document.getElementById("order-list");
+  if (!orders.length) { list.innerHTML = '<div class="orders-empty">Заказов пока нет</div>'; return; }
+  list.innerHTML = orders.map(o => {
+    const badge = o.status === "done"
+      ? '<span class="order-badge badge-done">Выполнено</span>'
+      : o.status === "cancelled"
+      ? '<span class="order-badge badge-cancelled">Отменён</span>'
+      : '<span class="order-badge badge-pending">В ожидании</span>';
+    const dt = new Date(o.created_at.replace(" ","T")).toLocaleDateString("ru-RU",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
+    return `<div class="order-card">
+      <div class="order-top">
+        <span class="order-num">${o.order_num}</span>
+        ${badge}
+      </div>
+      <div class="order-service">${o.service}</div>
+      <div class="order-meta">${dt}</div>
+      ${o.amount > 0 ? `<div class="order-amount">${o.amount} ${o.currency}</div>` : ""}
+    </div>`;
+  }).join("");
+}
+
+function filterOrders(btn) {
+  document.querySelectorAll(".filter-pill").forEach(p => p.classList.remove("active"));
+  btn.classList.add("active");
+  const status = btn.dataset.status;
+  if (status === "all") { renderOrders(allOrders); return; }
+  renderOrders(allOrders.filter(o => o.status === status));
+}
+
+// ── MODAL ─────────────────────────────────────────────────
+function openModal(service, category, sub) {
+  currentService  = service;
+  currentCategory = category;
+  document.getElementById("modal-title").textContent = service;
+  document.getElementById("modal-sub").textContent   = sub + " — заполните детали";
+  document.getElementById("modal-detail").value   = "";
+  document.getElementById("modal-amount").value   = "";
+  document.getElementById("modal-currency").value = "RUB";
+  document.getElementById("modal-contact").value  = tgUser.username ? "@" + tgUser.username : "";
+  const btn = document.getElementById("modal-submit");
+  btn.textContent = "Отправить заявку"; btn.className = "modal-btn";
+  document.getElementById("modal").classList.add("open");
+}
+
+function closeModal(e) {
+  if (e.target.id === "modal") document.getElementById("modal").classList.remove("open");
+}
+
+async function submitOrder() {
+  const detail   = document.getElementById("modal-detail").value.trim();
+  const amount   = parseFloat(document.getElementById("modal-amount").value) || 0;
+  const currency = document.getElementById("modal-currency").value.trim() || "RUB";
+  const contact  = document.getElementById("modal-contact").value.trim();
+  const btn      = document.getElementById("modal-submit");
+  if (!detail) { showToast("Заполните детали заказа"); return; }
+  btn.textContent = "Отправляем..."; btn.classList.add("loading");
+  try {
+    const d = await apiFetch("/order","POST",{
+      user_id:    tgUser.id,
+      username:   tgUser.username,
+      first_name: tgUser.first_name,
+      service:    currentService,
+      category:   currentCategory,
+      details:    {detail, contact},
+      amount, currency
+    });
+    if (d.ok) {
+      btn.textContent = "✓ Заявка #" + d.order_num + " принята";
+      btn.classList.remove("loading"); btn.classList.add("success");
+      await loadStats();
+      showToast("Заявка " + d.order_num + " отправлена");
+      if (current === "orders") loadUserOrders("all");
+      setTimeout(() => document.getElementById("modal").classList.remove("open"), 2000);
+    } else throw new Error();
+  } catch {
+    btn.textContent = "Отправить заявку"; btn.classList.remove("loading");
+    showToast("Ошибка соединения с сервером");
+  }
+}
+
+// ── WELCOME ───────────────────────────────────────────────
+function enterApp() {
+  document.getElementById("welcome").classList.remove("show");
+  document.getElementById("app").classList.add("visible");
+  loadStats();
+  registerAndLoadUser();
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2800);
+}
+
+// ── API HELPER ────────────────────────────────────────────
+async function apiFetch(path, method="GET", body=null) {
+  const opts = {method, headers:{"Content-Type":"application/json"}};
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  return r.json();
+}
+
+// ── INIT ──────────────────────────────────────────────────
+window.addEventListener("load", () => {
   if (window.Telegram && window.Telegram.WebApp) {
     const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
+    tg.ready(); tg.expand();
     const u = tg.initDataUnsafe?.user;
     if (u) {
-      document.getElementById('p-name').textContent = [u.first_name, u.last_name].filter(Boolean).join(' ') || 'Пользователь';
-      document.getElementById('p-tag').textContent = u.username ? '@' + u.username : 'Telegram User';
-      document.getElementById('p-id').textContent = u.id || '—';
+      tgUser = {id: u.id||"", username: u.username||"", first_name: u.first_name||""};
+      document.getElementById("p-name").textContent = [u.first_name,u.last_name].filter(Boolean).join(" ") || "Пользователь";
+      document.getElementById("p-tag").textContent  = u.username ? "@"+u.username : "Telegram User";
+      document.getElementById("p-id").textContent   = u.id || "—";
     }
   }
-  // Splash
   setTimeout(() => {
-    const splash = document.getElementById('splash');
-    splash.style.opacity = '0';
+    const sp = document.getElementById("splash");
+    sp.style.opacity = "0";
     setTimeout(() => {
-      splash.style.display = 'none';
-      document.getElementById('app').classList.add('visible');
+      sp.style.display = "none";
+      const isNew = !localStorage.getItem("escobar_seen");
+      if (isNew) {
+        localStorage.setItem("escobar_seen","1");
+        document.getElementById("welcome").classList.add("show");
+      } else {
+        document.getElementById("app").classList.add("visible");
+        loadStats();
+        registerAndLoadUser();
+      }
     }, 500);
   }, 2000);
 });

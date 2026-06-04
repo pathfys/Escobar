@@ -280,6 +280,32 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
 .topup-method-name{font-size:13px;font-weight:500;color:#e0e0e0;margin-bottom:3px;}
 .topup-method-desc{font-size:11px;color:#444;}
 .topup-method-arrow svg{width:16px;height:16px;stroke:#333;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+
+  /* CRYPTO RATES */
+.crypto-rates{padding:0 12px 16px;display:flex;flex-direction:column;gap:6px;}
+.rate-card{background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;transition:background 0.15s;}
+.rate-card:active{background:#161616;}
+.rate-left{display:flex;align-items:center;gap:10px;}
+.rate-coin-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.rate-coin-name{font-size:13px;font-weight:500;color:#e0e0e0;line-height:1.3;}
+.rate-coin-sym{font-size:10px;color:#444;margin-top:1px;}
+.rate-right{text-align:right;}
+.rate-price{font-family:'Unbounded',sans-serif;font-size:11px;color:#fff;letter-spacing:0.3px;}
+.rate-change{font-size:10px;margin-top:3px;}
+.rate-up{color:#27ae60;}
+.rate-down{color:#c0392b;}
+.rate-neutral{color:#555;}
+.rates-footer{font-size:9px;color:#2a2a2a;text-align:center;padding-bottom:4px;letter-spacing:0.5px;}
+.rates-loading{text-align:center;padding:24px;color:#333;font-size:12px;}
+
+/* FIAT RATES IN WALLET */
+.fiat-rate-item{background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;}
+.fiat-rate-left{display:flex;align-items:center;gap:10px;}
+.fiat-flag{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.fiat-name{font-size:13px;font-weight:500;color:#e0e0e0;}
+.fiat-desc{font-size:10px;color:#444;margin-top:1px;}
+.fiat-val{font-family:'Unbounded',sans-serif;font-size:11px;color:#fff;text-align:right;}
+.fiat-sub{font-size:9px;color:#444;text-align:right;margin-top:2px;}
   
 </style>
 </head>
@@ -430,6 +456,23 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
         <div class="wallet-item"><div class="wallet-dot" style="background:#564CE2"></div><div class="wallet-item-name">Tonhub</div><div class="wallet-item-tag">TON Connect</div></div>
         <div class="wallet-item"><div class="wallet-dot" style="background:#2ea3f2"></div><div class="wallet-item-name">Telegram Wallet</div><div class="wallet-item-tag">TON Connect</div></div>
         <div class="wallet-item"><div class="wallet-dot" style="background:#6C6AFF"></div><div class="wallet-item-name">OpenMask</div><div class="wallet-item-tag">TON Connect</div></div>
+        <div class="section-title">Курсы к доллару</div>
+      <div style="padding:0 12px 16px;display:flex;flex-direction:column;gap:6px;">
+        <div class="fiat-rate-item">
+          <div class="fiat-rate-left">
+            <div class="fiat-flag">🇷🇺</div>
+            <div><div class="fiat-name">RUB (РФ)</div><div class="fiat-desc">Российский рубль</div></div>
+          </div>
+          <div><div class="fiat-val" id="rate-rub-rf">—</div><div class="fiat-sub">к USD</div></div>
+        </div>
+        <div class="fiat-rate-item">
+          <div class="fiat-rate-left">
+            <div class="fiat-flag">🇲🇩</div>
+            <div><div class="fiat-name">RUB PMR</div><div class="fiat-desc">Приднестровский рубль</div></div>
+          </div>
+          <div><div class="fiat-val" id="rate-rub-pmr">—</div><div class="fiat-sub">приблизительно</div></div>
+        </div>
+      </div>
       </div>
     </div>
 
@@ -537,9 +580,9 @@ function switchPage(name) {
   document.getElementById(PAGES[name]).classList.add("active");
   document.getElementById(NAVS[name]).classList.add("active");
   current = name;
-  if (name === "orders") loadUserOrders("all");
-  if (name === "orders") loadUserOrders("all");
-  if (name === "wallet") syncWalletPageBalance(); // ← добавить
+  if (name === "orders")  loadUserOrders("all");
+  if (name === "wallet")  { syncWalletPageBalance(); loadFiatRates(); }
+  if (name === "profile") loadCryptoRates();
 }
 
 // ── STATS ─────────────────────────────────────────────────
@@ -576,12 +619,14 @@ setInterval(loadStats, 10000);
 // ── USER ──────────────────────────────────────────────────
 async function registerAndLoadUser() {
   try {
-    const d = await apiFetch("/user/register","POST",{
+    const d = await apiFetch("/user/register", "POST", {
       user_id:    tgUser.id,
       username:   tgUser.username,
-      first_name: tgUser.first_name
+      first_name: tgUser.first_name,
+      avatar_url: userAvatarUrl   // передаём url если получили из WebApp
     });
     updateProfileUI(d);
+    if (d.avatar_url) applyAvatar(d.avatar_url); // ← FIX: применяем аватарку
   } catch(e) { console.warn(e); }
 }
 
@@ -646,6 +691,9 @@ function filterOrders(btn) {
 let servicesCatalog = [];
 let selectedOption = "";
 let userAvatarUrl = "";
+let currentTopupMethod = "";
+let cryptoRatesLoaded  = false;
+let fiatRatesData      = { rub: null };
 
 const SERVICES_LOCAL = [
   {id:"exchange",category:"exchange",name:"Обмен валют",description:"TON → RUB, USDT → RUB и обратно",icon:"exchange",options:[{label:"TON → RUB",hint:"Лучший курс"},{label:"USDT → RUB",hint:"TRC20 / ERC20"},{label:"RUB → TON",hint:""},{label:"BTC → RUB",hint:"От 0.001 BTC"}]},
@@ -874,9 +922,11 @@ function openTopupSheet() {
 function openTopupMethod(type) {
   const info = TOPUP_DETAILS[type];
   if (!info) return;
+  currentTopupMethod = type;
   document.getElementById("topup-method-title").textContent = info.title;
   document.getElementById("topup-method-sub").textContent   = info.sub;
   document.getElementById("topup-method-body").innerHTML    = info.body;
+  document.getElementById("topup-amount-input").value       = "";
   document.getElementById("topup-method-sheet").classList.add("open");
 }
   
@@ -910,12 +960,14 @@ window.addEventListener("load", () => {
   if (window.Telegram && window.Telegram.WebApp) {
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
-    const u = tg.initDataUnsafe?.user;
+   const u = tg.initDataUnsafe?.user;
     if (u) {
-      tgUser = {id: u.id||"", username: u.username||"", first_name: u.first_name||""};
-      document.getElementById("p-name").textContent = [u.first_name,u.last_name].filter(Boolean).join(" ") || "Пользователь";
-      document.getElementById("p-tag").textContent  = u.username ? "@"+u.username : "Telegram User";
+      tgUser = { id: u.id || "", username: u.username || "", first_name: u.first_name || "" };
+      document.getElementById("p-name").textContent = [u.first_name, u.last_name].filter(Boolean).join(" ") || "Пользователь";
+      document.getElementById("p-tag").textContent  = u.username ? "@" + u.username : "Telegram User";
       document.getElementById("p-id").textContent   = u.id || "—";
+      // ← FIX аватарки: WebApp иногда отдаёт photo_url напрямую
+      if (u.photo_url) applyAvatar(u.photo_url);
     }
   }
   setTimeout(() => {
@@ -1041,6 +1093,119 @@ async function fetchTonBalance(address) {
   }
 }
 
+  // ── NOTIFY TOPUP PAID ─────────────────────────────────────────
+async function notifyTopupPaid() {
+  const amountVal = document.getElementById("topup-amount-input")?.value;
+  const amount    = parseFloat(amountVal);
+  if (!amountVal || isNaN(amount) || amount <= 0) {
+    showToast("Введите сумму пополнения"); return;
+  }
+  const methodNames = { ton: "TON", rub: "RUB (РФ)", pmr: "RUB PMR" };
+  const methodLabel = methodNames[currentTopupMethod] || currentTopupMethod;
+  try {
+    await apiFetch("/topup_notify", "POST", {
+      user_id:    tgUser.id,
+      username:   tgUser.username,
+      first_name: tgUser.first_name,
+      amount:     amount,
+      method:     methodLabel
+    });
+  } catch(e) { console.warn("topup notify err:", e); }
+  document.getElementById("topup-method-sheet").classList.remove("open");
+  document.getElementById("topup-sheet").classList.remove("open");
+  showToast(`Заявка на ${amount} $ отправлена ✓`);
+}
+
+// ── CRYPTO RATES ──────────────────────────────────────────────
+async function loadCryptoRates() {
+  const container = document.getElementById("crypto-rates");
+  if (!container) return;
+
+  // Не грузим повторно если данные свежие (< 2 мин)
+  if (cryptoRatesLoaded && container.dataset.ts &&
+      Date.now() - parseInt(container.dataset.ts) < 120000) return;
+
+  container.innerHTML = '<div class="rates-loading">Обновление...</div>';
+  try {
+    const resp = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price" +
+      "?ids=bitcoin,ethereum,toncoin,tether" +
+      "&vs_currencies=usd,rub" +
+      "&include_24hr_change=true"
+    );
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const d = await resp.json();
+
+    // Сохраняем RUB rate для вкладки кошелька
+    if (d.tether?.rub) fiatRatesData.rub = d.tether.rub;
+
+    const coins = [
+      { key: "bitcoin",  name: "Bitcoin",  sym: "BTC",  icon: "₿",  bg: "rgba(247,147,26,0.15)", border: "rgba(247,147,26,0.3)" },
+      { key: "ethereum", name: "Ethereum", sym: "ETH",  icon: "Ξ",  bg: "rgba(98,126,234,0.15)", border: "rgba(98,126,234,0.3)" },
+      { key: "toncoin",  name: "Toncoin",  sym: "TON",  icon: "💎", bg: "rgba(0,152,234,0.15)",  border: "rgba(0,152,234,0.3)"  },
+      { key: "tether",   name: "Tether",   sym: "USDT", icon: "₮",  bg: "rgba(38,161,123,0.15)", border: "rgba(38,161,123,0.3)" },
+    ];
+
+    container.innerHTML = coins.map(c => {
+      const info   = d[c.key];
+      if (!info) return "";
+      const price  = info.usd;
+      const change = info.usd_24h_change;
+      const priceStr = price >= 1000
+        ? "$" + price.toLocaleString("en-US", { maximumFractionDigits: 0 })
+        : "$" + price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+      const changeStr = (change >= 0 ? "+" : "") + change.toFixed(2) + "%";
+      const cls = change > 0 ? "rate-up" : change < 0 ? "rate-down" : "rate-neutral";
+      return `
+        <div class="rate-card">
+          <div class="rate-left">
+            <div class="rate-coin-icon" style="background:${c.bg};border:0.5px solid ${c.border};">${c.icon}</div>
+            <div><div class="rate-coin-name">${c.name}</div><div class="rate-coin-sym">${c.sym}</div></div>
+          </div>
+          <div class="rate-right">
+            <div class="rate-price">${priceStr}</div>
+            <div class="rate-change ${cls}">${changeStr} 24ч</div>
+          </div>
+        </div>`;
+    }).join("") + `<div class="rates-footer">CoinGecko · обновлено ${new Date().toLocaleTimeString("ru-RU", {hour:"2-digit",minute:"2-digit"})}</div>`;
+
+    container.dataset.ts = Date.now();
+    cryptoRatesLoaded = true;
+  } catch(e) {
+    console.warn("loadCryptoRates:", e);
+    container.innerHTML = '<div class="rates-loading" style="color:#333;">Курсы временно недоступны</div>';
+  }
+}
+
+// ── FIAT RATES (wallet tab) ───────────────────────────────────
+async function loadFiatRates() {
+  // Если ещё не загружали крипту — загружаем чтобы получить rub rate
+  if (!fiatRatesData.rub) {
+    try {
+      const resp = await fetch(
+        "https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=rub"
+      );
+      const d = await resp.json();
+      if (d.tether?.rub) fiatRatesData.rub = d.tether.rub;
+    } catch(e) { console.warn("fiatRates:", e); }
+  }
+
+  const rubEl  = document.getElementById("rate-rub-rf");
+  const pmrEl  = document.getElementById("rate-rub-pmr");
+  if (!rubEl || !pmrEl) return;
+
+  if (fiatRatesData.rub) {
+    const rubRate = fiatRatesData.rub;
+    rubEl.textContent = `1 $ ≈ ${Math.round(rubRate)} ₽`;
+    // PMR: курс ПРБ обычно ниже RF, ~16-18 за $1
+    // Приближение: PMR ≈ RUB_RF × 0.19 (1 USD ≈ 17 PMR)
+    const pmrRate = Math.round(rubRate * 0.195);
+    pmrEl.textContent = `1 $ ≈ ${pmrRate} руб.`;
+  } else {
+    rubEl.textContent = "Недоступно";
+    pmrEl.textContent = "Недоступно";
+  }
+}
  
 </script>
 
@@ -1137,14 +1302,25 @@ async function fetchTonBalance(address) {
   <div class="topup-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title" id="topup-method-title" style="margin-bottom:6px;"></div>
-    <div class="modal-sub"   id="topup-method-sub"   style="margin-bottom:20px;"></div>
+    <div class="modal-sub"   id="topup-method-sub"   style="margin-bottom:16px;"></div>
+
+    <!-- СУММА ПОПОЛНЕНИЯ -->
+    <div style="margin-bottom:16px;">
+      <div class="topup-section">Сумма пополнения ($)</div>
+      <input class="modal-input" id="topup-amount-input" type="number"
+             placeholder="Введите сумму" inputmode="decimal" min="1" step="any"
+             style="margin-bottom:0;"/>
+    </div>
+
     <div id="topup-method-body"></div>
-    <button class="modal-btn" style="margin-top:8px;" onclick="
-      document.getElementById('topup-method-sheet').classList.remove('open');
-      showToast('Заявка на пополнение отправлена ✓');">
+
+    <button class="modal-btn" style="margin-top:12px;" onclick="notifyTopupPaid()">
       Я оплатил — уведомить менеджера
     </button>
-    <button class="no-balance-close" style="margin-top:8px;" onclick="document.getElementById('topup-method-sheet').classList.remove('open')">Закрыть</button>
+    <button class="no-balance-close" style="margin-top:8px;"
+            onclick="document.getElementById('topup-method-sheet').classList.remove('open')">
+      Закрыть
+    </button>
   </div>
 </div>
   

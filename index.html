@@ -117,7 +117,7 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
 .wc-sub{font-size:11px;color:#444;}
 .wallet-connect-btn{width:calc(100% - 24px);margin:0 12px 16px;padding:15px;border-radius:14px;background:var(--accent);border:none;color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.18s;letter-spacing:0.3px;}
 .wallet-connect-btn:active{opacity:0.85;transform:scale(0.98);}
-.wallet-list{padding:0 12px;display:flex;flex-direction:column;gap:6px;}
+.wallet-list{padding:0 12px;display:flex;flex-direction:column;gap:6px;padding-bottom:8px;}
 .wallet-item{background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:13px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;}
 .wallet-item:active{background:#161616;}
 .wallet-dot{width:8px;height:8px;border-radius:50%;}
@@ -438,7 +438,7 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
     </div>
 
     <!-- WALLET -->
-    <div class="page" id="page-wallet">
+  <div class="page" id="page-wallet" style="overflow-y:auto;">
       <div class="topbar"><span class="topbar-logo">КОШЕЛЬКИ</span></div>
       <div class="wallet-card">
   <div class="wc-label">ОБЩИЙ БАЛАНС</div>
@@ -456,7 +456,9 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
         <div class="wallet-item"><div class="wallet-dot" style="background:#564CE2"></div><div class="wallet-item-name">Tonhub</div><div class="wallet-item-tag">TON Connect</div></div>
         <div class="wallet-item"><div class="wallet-dot" style="background:#2ea3f2"></div><div class="wallet-item-name">Telegram Wallet</div><div class="wallet-item-tag">TON Connect</div></div>
         <div class="wallet-item"><div class="wallet-dot" style="background:#6C6AFF"></div><div class="wallet-item-name">OpenMask</div><div class="wallet-item-tag">TON Connect</div></div>
-        <div class="section-title">Курсы к доллару</div>
+      </div>
+
+      <div class="section-title" style="padding-top:16px;">Курсы к доллару</div>
       <div style="padding:0 12px 16px;display:flex;flex-direction:column;gap:6px;">
         <div class="fiat-rate-item">
           <div class="fiat-rate-left">

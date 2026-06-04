@@ -248,6 +248,38 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
 .topbar-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
 /* OPTION BADGE */
 .opt-selected-badge{display:none;margin-bottom:10px;background:rgba(42,171,238,0.08);border:0.5px solid rgba(42,171,238,0.25);border-radius:10px;padding:9px 14px;font-size:12px;color:var(--accent);}
+
+  /* NO BALANCE SHEET */
+.no-balance-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:210;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s ease;}
+.no-balance-overlay.open{opacity:1;pointer-events:all;}
+.no-balance-sheet{background:#141414;border:0.5px solid #2a2a2a;border-radius:24px 24px 0 0;padding:32px 24px 48px;width:100%;max-width:420px;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.34,1.2,0.64,1);text-align:center;}
+.no-balance-overlay.open .no-balance-sheet{transform:translateY(0);}
+.no-balance-icon{width:64px;height:64px;border-radius:50%;background:#1a1a1a;border:0.5px solid #2a2a2a;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
+.no-balance-icon svg{width:28px;height:28px;stroke:#444;fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;}
+.no-balance-title{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:500;color:#fff;margin-bottom:10px;}
+.no-balance-sub{font-size:12px;color:#444;line-height:1.7;margin-bottom:28px;}
+.no-balance-btn{width:100%;padding:15px;border-radius:14px;border:none;background:var(--accent);color:#fff;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.18s;margin-bottom:10px;}
+.no-balance-btn:active{opacity:0.85;transform:scale(0.98);}
+.no-balance-close{width:100%;padding:13px;border-radius:14px;border:0.5px solid #2a2a2a;background:transparent;color:#444;font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;transition:all 0.18s;}
+.no-balance-close:active{opacity:0.7;}
+
+  /* TOPUP SHEET */
+.topup-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:210;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s ease;}
+.topup-overlay.open{opacity:1;pointer-events:all;}
+.topup-sheet{background:#141414;border:0.5px solid #2a2a2a;border-radius:24px 24px 0 0;padding:24px 20px 48px;width:100%;max-width:420px;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.34,1.2,0.64,1);}
+.topup-overlay.open .topup-sheet{transform:translateY(0);}
+.topup-balance-row{display:flex;align-items:center;justify-content:space-between;background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:14px 16px;margin-bottom:20px;}
+.topup-balance-label{font-size:11px;color:#444;letter-spacing:0.5px;}
+.topup-balance-val{font-family:'Unbounded',sans-serif;font-size:15px;color:#fff;}
+.topup-section{font-size:10px;color:#444;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding-left:2px;}
+.topup-methods{display:flex;flex-direction:column;gap:8px;}
+.topup-method{background:#111;border:0.5px solid #1e1e1e;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:background 0.15s;}
+.topup-method:active{background:#1a1a1a;transform:scale(0.98);}
+.topup-method-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px;}
+.topup-method-info{flex:1;}
+.topup-method-name{font-size:13px;font-weight:500;color:#e0e0e0;margin-bottom:3px;}
+.topup-method-desc{font-size:11px;color:#444;}
+.topup-method-arrow svg{width:16px;height:16px;stroke:#333;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
   
 </style>
 </head>
@@ -296,7 +328,7 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
     <div class="page active" id="page-home">
       <div class="topbar">
   <span class="topbar-logo">ESCOBAR</span>
-  <div class="balance-badge" onclick="switchPage('wallet')" id="balance-badge">
+  <div class="balance-badge" onclick="openTopupSheet()" id="balance-badge">
     <div class="balance-badge-icon">
       <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
     </div>
@@ -704,6 +736,12 @@ function selectOption(idx, label, el) {
 function proceedToOrder() {
   document.getElementById("modal-options").classList.remove("open");
   setTimeout(() => {
+    // Проверяем баланс
+    if (userBalance <= 0) {
+      showNoBalanceSheet();
+      return;
+    }
+
     const badge = document.getElementById("modal-option-badge");
     if (badge) { badge.textContent = "✓ " + selectedOption; badge.style.display = "block"; }
     document.getElementById("modal-title").textContent = currentService;
@@ -716,6 +754,10 @@ function proceedToOrder() {
     btn.textContent = "Отправить заявку"; btn.className = "modal-btn";
     document.getElementById("modal").classList.add("open");
   }, 280);
+}
+
+  function showNoBalanceSheet() {
+  document.getElementById("no-balance-sheet").classList.add("open");
 }
 
 function closeModal(e) {
@@ -771,7 +813,73 @@ async function submitOrder() {
     showToast("Ошибка соединения с сервером");
   }
 }
+// ── TOPUP ─────────────────────────────────────────────────
+const TOPUP_DETAILS = {
+  ton: {
+    title: "Пополнение через TON",
+    sub:   "Отправь TON на адрес ниже",
+    body: `
+      <div style="background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:16px;margin-bottom:10px;">
+        <div style="font-size:10px;color:#444;letter-spacing:1px;margin-bottom:8px;">АДРЕС КОШЕЛЬКА</div>
+        <div style="font-family:'Unbounded',sans-serif;font-size:11px;color:#fff;word-break:break-all;line-height:1.6;" id="ton-addr">ТВОЙ_TON_АДРЕС</div>
+      </div>
+      <div style="background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:#444;">Минимальная сумма</span>
+        <span style="font-size:12px;color:#fff;font-family:'Unbounded',sans-serif;">1 TON</span>
+      </div>
+      <div style="font-size:11px;color:#333;line-height:1.7;padding:0 4px;">
+        После отправки нажми кнопку ниже — менеджер зачислит баланс в течение 15 минут.
+      </div>`
+  },
+  rub: {
+    title: "Пополнение через RUB",
+    sub:   "Перевод на карту или СБП",
+    body: `
+      <div style="background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:16px;margin-bottom:10px;">
+        <div style="font-size:10px;color:#444;letter-spacing:1px;margin-bottom:8px;">НОМЕР КАРТЫ / СБП</div>
+        <div style="font-family:'Unbounded',sans-serif;font-size:13px;color:#fff;letter-spacing:2px;" id="rub-card">ТВОЙ_НОМЕР_КАРТЫ</div>
+      </div>
+      <div style="background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:#444;">Минимальная сумма</span>
+        <span style="font-size:12px;color:#fff;font-family:'Unbounded',sans-serif;">500 ₽</span>
+      </div>
+      <div style="font-size:11px;color:#333;line-height:1.7;padding:0 4px;">
+        Укажи в комментарии свой Telegram username. После перевода нажми кнопку ниже.
+      </div>`
+  },
+  pmr: {
+    title: "Пополнение RUB PMR",
+    sub:   "Перевод в приднестровских рублях",
+    body: `
+      <div style="background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:16px;margin-bottom:10px;">
+        <div style="font-size:10px;color:#444;letter-spacing:1px;margin-bottom:8px;">НОМЕР ДЛЯ ПЕРЕВОДА</div>
+        <div style="font-family:'Unbounded',sans-serif;font-size:13px;color:#fff;letter-spacing:2px;" id="pmr-num">ТВОЙ_НОМЕР_PMR</div>
+      </div>
+      <div style="background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:#444;">Минимальная сумма</span>
+        <span style="font-size:12px;color:#fff;font-family:'Unbounded',sans-serif;">50 руб. ПМР</span>
+      </div>
+      <div style="font-size:11px;color:#333;line-height:1.7;padding:0 4px;">
+        Укажи в комментарии свой Telegram username. После перевода нажми кнопку ниже.
+      </div>`
+  }
+};
 
+function openTopupSheet() {
+  const el = document.getElementById("topup-current-balance");
+  if (el) el.textContent = userBalance.toLocaleString("ru-RU",{minimumFractionDigits:2,maximumFractionDigits:2}) + " $";
+  document.getElementById("topup-sheet").classList.add("open");
+}
+
+function openTopupMethod(type) {
+  const info = TOPUP_DETAILS[type];
+  if (!info) return;
+  document.getElementById("topup-method-title").textContent = info.title;
+  document.getElementById("topup-method-sub").textContent   = info.sub;
+  document.getElementById("topup-method-body").innerHTML    = info.body;
+  document.getElementById("topup-method-sheet").classList.add("open");
+}
+  
 // ── WELCOME ───────────────────────────────────────────────
 function enterApp() {
   document.getElementById("welcome").classList.remove("show");
@@ -953,6 +1061,90 @@ async function fetchTonBalance(address) {
     <div class="modal-title">Все услуги</div>
     <div class="modal-sub">Выберите нужную услугу</div>
     <div class="svc-catalog-list" id="svc-catalog-list"></div>
+  </div>
+</div>
+
+  <!-- NO BALANCE SHEET -->
+<div class="no-balance-overlay" id="no-balance-sheet" onclick="if(event.target.id==='no-balance-sheet')this.classList.remove('open')">
+  <div class="no-balance-sheet">
+    <div class="modal-handle"></div>
+    <div class="no-balance-icon">
+      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12a2 2 0 0 1 2-2h4v4h-4a2 2 0 0 1-2-2z"/><circle cx="16" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
+    </div>
+    <div class="no-balance-title">Недостаточно средств</div>
+    <div class="no-balance-sub">
+      Для оформления заказа необходимо<br>пополнить баланс.<br><br>
+      Свяжитесь с нами для пополнения<br>удобным способом.
+    </div>
+    <button class="no-balance-btn" onclick="
+      document.getElementById('no-balance-sheet').classList.remove('open');
+      switchPage('wallet');">
+      Перейти к кошельку
+    </button>
+    <button class="no-balance-close" onclick="document.getElementById('no-balance-sheet').classList.remove('open')">
+      Закрыть
+    </button>
+  </div>
+</div>
+  <!-- TOPUP SHEET -->
+<div class="topup-overlay" id="topup-sheet" onclick="if(event.target.id==='topup-sheet')this.classList.remove('open')">
+  <div class="topup-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="margin-bottom:6px;">Пополнить баланс</div>
+    <div class="modal-sub" style="margin-bottom:16px;">Выберите способ оплаты</div>
+
+    <div class="topup-balance-row">
+      <span class="topup-balance-label">ТЕКУЩИЙ БАЛАНС</span>
+      <span class="topup-balance-val" id="topup-current-balance">0,00 $</span>
+    </div>
+
+    <div class="topup-section">Способы пополнения</div>
+    <div class="topup-methods">
+
+      <div class="topup-method" onclick="openTopupMethod('ton')">
+        <div class="topup-method-icon" style="background:rgba(0,152,234,0.1);border:0.5px solid rgba(0,152,234,0.2);">💎</div>
+        <div class="topup-method-info">
+          <div class="topup-method-name">TON</div>
+          <div class="topup-method-desc">Toncoin — быстро и анонимно</div>
+        </div>
+        <div class="topup-method-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+
+      <div class="topup-method" onclick="openTopupMethod('rub')">
+        <div class="topup-method-icon" style="background:rgba(255,255,255,0.04);border:0.5px solid #2a2a2a;">₽</div>
+        <div class="topup-method-info">
+          <div class="topup-method-name">RUB</div>
+          <div class="topup-method-desc">Перевод на карту — СБП / Тинькофф</div>
+        </div>
+        <div class="topup-method-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+
+      <div class="topup-method" onclick="openTopupMethod('pmr')">
+        <div class="topup-method-icon" style="background:rgba(255,255,255,0.04);border:0.5px solid #2a2a2a;">🇲🇩</div>
+        <div class="topup-method-info">
+          <div class="topup-method-name">RUB PMR</div>
+          <div class="topup-method-desc">Приднестровский рубль — перевод</div>
+        </div>
+        <div class="topup-method-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOPUP METHOD DETAIL SHEET -->
+<div class="topup-overlay" id="topup-method-sheet" onclick="if(event.target.id==='topup-method-sheet')this.classList.remove('open')">
+  <div class="topup-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="topup-method-title" style="margin-bottom:6px;"></div>
+    <div class="modal-sub"   id="topup-method-sub"   style="margin-bottom:20px;"></div>
+    <div id="topup-method-body"></div>
+    <button class="modal-btn" style="margin-top:8px;" onclick="
+      document.getElementById('topup-method-sheet').classList.remove('open');
+      showToast('Заявка на пополнение отправлена ✓');">
+      Я оплатил — уведомить менеджера
+    </button>
+    <button class="no-balance-close" style="margin-top:8px;" onclick="document.getElementById('topup-method-sheet').classList.remove('open')">Закрыть</button>
   </div>
 </div>
   

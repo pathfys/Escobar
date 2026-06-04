@@ -1182,48 +1182,90 @@ async function notifyTopupPaid() {
   showToast(`Заявка на ${amount} $ отправлена ✓`);
 }
 
-// ── CRYPTO RATES ──────────────────────────────────────────────
+// ── CRYPTO RATES ─────────────────────────────────────────
 async function loadCryptoRates() {
   const container = document.getElementById("crypto-rates");
   if (!container) return;
-
-  // Не грузим повторно если данные свежие (< 2 мин)
   if (cryptoRatesLoaded && container.dataset.ts &&
       Date.now() - parseInt(container.dataset.ts) < 120000) return;
-
   container.innerHTML = '<div class="rates-loading">Обновление...</div>';
   try {
     const resp = await fetch(
       "https://api.coingecko.com/api/v3/simple/price" +
-      "?ids=bitcoin,ethereum,toncoin,tether" +
-      "&vs_currencies=usd,rub" +
-      "&include_24hr_change=true"
+      "?ids=bitcoin,ethereum,toncoin,tether,solana,bnb" +
+      "&vs_currencies=usd,rub&include_24hr_change=true"
     );
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     const d = await resp.json();
-
-    // Сохраняем RUB rate для вкладки кошелька
     if (d.tether?.rub) fiatRatesData.rub = d.tether.rub;
+    fiatRatesData.coins = d;
+    container.innerHTML = renderCryptoCards(d) +
+      `<div style="font-size:9px;color:#222;text-align:center;padding:4px 0;letter-spacing:0.5px;">CoinGecko · ${new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}</div>`;
+    container.dataset.ts = Date.now();
+    cryptoRatesLoaded = true;
+  } catch(e) {
+    console.warn("loadCryptoRates:", e);
+    container.innerHTML = '<div class="rates-loading" style="color:#333;">Курсы временно недоступны</div>';
+  }
+}
 
-    const coins = [
-      { key: "bitcoin",  name: "Bitcoin",  sym: "BTC",  icon: "₿",  bg: "rgba(247,147,26,0.15)", border: "rgba(247,147,26,0.3)" },
-      { key: "ethereum", name: "Ethereum", sym: "ETH",  icon: "Ξ",  bg: "rgba(98,126,234,0.15)", border: "rgba(98,126,234,0.3)" },
-      { key: "toncoin",  name: "Toncoin",  sym: "TON",  icon: "💎", bg: "rgba(0,152,234,0.15)",  border: "rgba(0,152,234,0.3)"  },
-      { key: "tether",   name: "Tether",   sym: "USDT", icon: "₮",  bg: "rgba(38,161,123,0.15)", border: "rgba(38,161,123,0.3)" },
-    ];
+// ── FIAT RATES ────────────────────────────────────────────
+async function loadFiatRates() {
+  if (!fiatRatesData.coins) {
+    try {
+      const resp = await fetch(
+        "https://api.coingecko.com/api/v3/simple/price" +
+        "?ids=tether,bitcoin,ethereum,toncoin,solana,bnb" +
+        "&vs_currencies=usd,rub&include_24hr_change=true"
+      );
+      const d = await resp.json();
+      if (d.tether?.rub) fiatRatesData.rub = d.tether.rub;
+      fiatRatesData.coins = d;
+    } catch(e) { console.warn("fiatRates:", e); }
+  }
+  const rubEl = document.getElementById("rate-rub-rf");
+  const pmrEl = document.getElementById("rate-rub-pmr");
+  if (rubEl && fiatRatesData.rub) {
+    rubEl.textContent = `1 $ ≈ ${Math.round(fiatRatesData.rub)} ₽`;
+    pmrEl.textContent = `1 $ ≈ ${Math.round(fiatRatesData.rub * 0.195)} руб.`;
+  } else if (rubEl) {
+    rubEl.textContent = "Недоступно";
+    pmrEl.textContent = "Недоступно";
+  }
+  const container = document.getElementById("crypto-rates-wallet");
+  if (!container) return;
+  if (!fiatRatesData.coins) {
+    container.innerHTML = '<div style="text-align:center;padding:24px;color:#333;font-size:12px;">Курсы недоступны</div>';
+    return;
+  }
+  container.innerHTML = renderCryptoCards(fiatRatesData.coins) +
+    `<div style="font-size:9px;color:#222;text-align:center;padding:4px 0;letter-spacing:0.5px;">CoinGecko · ${new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}</div>`;
+}
 
-container.innerHTML = coins.map(c => {
+// ── ОБЩИЙ РЕНДЕР КАРТОЧЕК ─────────────────────────────────
+function renderCryptoCards(d) {
+  const coins = [
+    { key:"bitcoin",  name:"Bitcoin",  sym:"BTC",  icon:"₿", bg:"rgba(247,147,26,0.15)", border:"rgba(247,147,26,0.3)"  },
+    { key:"ethereum", name:"Ethereum", sym:"ETH",  icon:"Ξ", bg:"rgba(98,126,234,0.15)", border:"rgba(98,126,234,0.3)"  },
+    { key:"toncoin",  name:"Toncoin",  sym:"TON",  icon:"💎",bg:"rgba(0,152,234,0.15)",  border:"rgba(0,152,234,0.3)"   },
+    { key:"tether",   name:"Tether",   sym:"USDT", icon:"₮", bg:"rgba(38,161,123,0.15)", border:"rgba(38,161,123,0.3)"  },
+    { key:"solana",   name:"Solana",   sym:"SOL",  icon:"◎", bg:"rgba(153,69,255,0.15)", border:"rgba(153,69,255,0.3)"  },
+    { key:"bnb",      name:"BNB",      sym:"BNB",  icon:"⬡", bg:"rgba(243,186,47,0.15)", border:"rgba(243,186,47,0.3)"  },
+  ];
+  return coins.map(c => {
     const info = d[c.key];
     if (!info) return "";
     const price  = info.usd;
     const change = info.usd_24h_change || 0;
     const priceStr = price >= 1000
-      ? "$" + price.toLocaleString("en-US", { maximumFractionDigits: 0 })
-      : "$" + price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
-    const rubStr = price >= 1000
-      ? Math.round(price * fiatRatesData.rub).toLocaleString("ru-RU") + " ₽"
-      : (price * fiatRatesData.rub).toLocaleString("ru-RU", {maximumFractionDigits:1}) + " ₽";
-    const changeStr = (change >= 0 ? "+" : "") + change.toFixed(2) + "%";
+      ? "$" + price.toLocaleString("en-US", {maximumFractionDigits:0})
+      : "$" + price.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:4});
+    const rubStr = fiatRatesData.rub
+      ? (price >= 1000
+          ? Math.round(price * fiatRatesData.rub).toLocaleString("ru-RU") + " ₽"
+          : (price * fiatRatesData.rub).toLocaleString("ru-RU",{maximumFractionDigits:1}) + " ₽")
+      : "";
+    const changeStr   = (change >= 0 ? "+" : "") + change.toFixed(2) + "%";
     const changeColor = change > 0 ? "#27ae60" : change < 0 ? "#c0392b" : "#555";
     const changeBg    = change > 0 ? "rgba(39,174,96,0.1)" : change < 0 ? "rgba(192,57,43,0.1)" : "rgba(80,80,80,0.1)";
     return `
@@ -1243,80 +1285,8 @@ container.innerHTML = coins.map(c => {
           </div>
         </div>
       </div>`;
-  }).join("") + `<div style="font-size:9px;color:#222;text-align:center;padding:4px 0;letter-spacing:0.5px;">CoinGecko · обновлено ${new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}</div>`;
-
-// ── FIAT RATES (wallet tab) ───────────────────────────────────
-async function loadFiatRates() {
-  if (!fiatRatesData.rub) {
-    try {
-      const resp = await fetch(
-        "https://api.coingecko.com/api/v3/simple/price" +
-        "?ids=tether,bitcoin,ethereum,toncoin,solana,bnb" +
-        "&vs_currencies=usd,rub" +
-        "&include_24hr_change=true"
-      );
-      const d = await resp.json();
-      if (d.tether?.rub) fiatRatesData.rub = d.tether.rub;
-      fiatRatesData.coins = d;
-    } catch(e) { console.warn("fiatRates:", e); }
-  }
-
-  // Фиат курсы
-  const rubEl = document.getElementById("rate-rub-rf");
-  const pmrEl = document.getElementById("rate-rub-pmr");
-  if (rubEl && pmrEl) {
-    if (fiatRatesData.rub) {
-      rubEl.textContent = `1 $ ≈ ${Math.round(fiatRatesData.rub)} ₽`;
-      pmrEl.textContent = `1 $ ≈ ${Math.round(fiatRatesData.rub * 0.195)} руб.`;
-    } else {
-      rubEl.textContent = "Недоступно";
-      pmrEl.textContent = "Недоступно";
-    }
-  }
-
-  // Крипто курсы в кошельке
-  const container = document.getElementById("crypto-rates-wallet");
-  if (!container) return;
-
-  const coins = [
-    { key: "bitcoin",  name: "Bitcoin",  sym: "BTC",  icon: "₿",  bg: "rgba(247,147,26,0.15)", border: "rgba(247,147,26,0.3)"  },
-    { key: "ethereum", name: "Ethereum", sym: "ETH",  icon: "Ξ",  bg: "rgba(98,126,234,0.15)", border: "rgba(98,126,234,0.3)"  },
-    { key: "toncoin",  name: "Toncoin",  sym: "TON",  icon: "💎", bg: "rgba(0,152,234,0.15)",  border: "rgba(0,152,234,0.3)"   },
-    { key: "tether",   name: "Tether",   sym: "USDT", icon: "₮",  bg: "rgba(38,161,123,0.15)", border: "rgba(38,161,123,0.3)"  },
-    { key: "solana",   name: "Solana",   sym: "SOL",  icon: "◎",  bg: "rgba(153,69,255,0.15)", border: "rgba(153,69,255,0.3)"  },
-    { key: "bnb",      name: "BNB",      sym: "BNB",  icon: "⬡",  bg: "rgba(243,186,47,0.15)", border: "rgba(243,186,47,0.3)"  },
-  ];
-
-  const d = fiatRatesData.coins;
-  if (!d) {
-    container.innerHTML = '<div class="rates-loading" style="color:#333;">Курсы недоступны</div>';
-    return;
-  }
-
-  container.innerHTML = coins.map(c => {
-    const info = d[c.key];
-    if (!info) return "";
-    const price  = info.usd;
-    const change = info.usd_24h_change || 0;
-    const priceStr = price >= 1000
-      ? "$" + price.toLocaleString("en-US", { maximumFractionDigits: 0 })
-      : "$" + price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
-    const changeStr = (change >= 0 ? "+" : "") + change.toFixed(2) + "%";
-    const cls = change > 0 ? "rate-up" : change < 0 ? "rate-down" : "rate-neutral";
-    return `
-      <div class="rate-card">
-        <div class="rate-left">
-          <div class="rate-coin-icon" style="background:${c.bg};border:0.5px solid ${c.border};">${c.icon}</div>
-          <div><div class="rate-coin-name">${c.name}</div><div class="rate-coin-sym">${c.sym}</div></div>
-        </div>
-        <div class="rate-right">
-          <div class="rate-price">${priceStr}</div>
-          <div class="rate-change ${cls}">${changeStr} 24ч</div>
-        </div>
-      </div>`;
-  }).join("") + `<div class="rates-footer">CoinGecko · ${new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}</div>`;
+  }).join("");
 }
- 
 </script>
 
   <!-- МОДАЛ ВЫБОРА ОПЦИИ -->

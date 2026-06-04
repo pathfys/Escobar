@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>ESCOBAR</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0A0A0A;--card:#111;--card2:#161616;--border:rgba(255,255,255,0.07);--text:#fff;--muted:#444;--accent:#2AABEE;--nav-h:72px;}
@@ -196,6 +197,27 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
   50%{transform:scale(1.15);color:var(--accent);}
   100%{transform:scale(1)}
 }
+  /* TON CONNECT STATES */
+.wallet-connect-btn.connected{
+  background:#1a1a1a;
+  border:0.5px solid #2a2a2a;
+  color:#555;
+  font-size:12px;
+}
+.wallet-connect-btn.connected:active{opacity:0.7;}
+.wc-address{
+  font-size:10px;color:#444;margin-top:4px;
+  font-family:'Inter',sans-serif;letter-spacing:0.5px;
+}
+.wallet-item.connected-wallet{
+  border-color:rgba(42,171,238,0.3);
+  background:rgba(42,171,238,0.05);
+}
+.wallet-item.connected-wallet .wallet-item-tag{
+  color:var(--accent);
+  border-color:rgba(42,171,238,0.3);
+  background:rgba(42,171,238,0.08);
+}
 </style>
 </head>
 <body>
@@ -330,11 +352,14 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
     <div class="page" id="page-wallet">
       <div class="topbar"><span class="topbar-logo">КОШЕЛЬКИ</span></div>
       <div class="wallet-card">
-        <div class="wc-label">ОБЩИЙ БАЛАНС</div>
-        <div class="wc-amount">$0.00</div>
-        <div class="wc-sub">Подключите кошелёк для отображения</div>
-      </div>
-      <button class="wallet-connect-btn">Подключить кошелёк</button>
+  <div class="wc-label">ОБЩИЙ БАЛАНС</div>
+  <div class="wc-amount" id="wc-ton-amount">0.00 TON</div>
+  <div class="wc-sub" id="wc-ton-sub">Подключите кошелёк для отображения</div>
+  <div class="wc-address" id="wc-address"></div>
+</div>
+<button class="wallet-connect-btn" id="wallet-connect-btn" onclick="handleWalletBtn()">
+  Подключить кошелёк
+</button>
       <div class="section-title">Поддерживаемые кошельки</div>
       <div class="wallet-list">
         <div class="wallet-item"><div class="wallet-dot" style="background:#0098ea"></div><div class="wallet-item-name">Tonkeeper</div><div class="wallet-item-tag">TON Connect</div></div>
@@ -612,6 +637,7 @@ function enterApp() {
   loadStats();
   registerAndLoadUser();
   loadUserBalance();
+  initTonConnect();
 }
 
 // ── TOAST ─────────────────────────────────────────────────
@@ -655,10 +681,115 @@ window.addEventListener("load", () => {
         document.getElementById("app").classList.add("visible");
         loadStats();
         registerAndLoadUser();
+        initTonConnect(); // ← добавлено
       }
     }, 500);
   }, 2000);
 });
+  // ── TON CONNECT ───────────────────────────────────────────
+let tonConnectUI = null;
+let connectedWalletAddress = null;
+
+function initTonConnect() {
+  try {
+    tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl: "https://YOUR_DOMAIN/tonconnect-manifest.json", // ← ЗАМЕНИТЬ
+      // Если нет своего домена — используй временный ниже:
+      // manifestUrl: "https://gist.githubusercontent.com/...", 
+    });
+
+    tonConnectUI.onStatusChange(wallet => {
+      if (wallet) {
+        connectedWalletAddress = wallet.account.address;
+        onWalletConnected(wallet);
+      } else {
+        connectedWalletAddress = null;
+        onWalletDisconnected();
+      }
+    });
+  } catch(e) {
+    console.warn("TonConnect init error:", e);
+  }
+}
+
+async function handleWalletBtn() {
+  if (!tonConnectUI) { showToast("TonConnect не инициализирован"); return; }
+  if (connectedWalletAddress) {
+    // Уже подключён — отключаем
+    await tonConnectUI.disconnect();
+  } else {
+    // Открываем модал выбора кошелька
+    await tonConnectUI.openModal();
+  }
+}
+
+function onWalletConnected(wallet) {
+  const addr = wallet.account.address;
+  // Обрезаем адрес для отображения: EQAb...xYz
+  const short = addr.slice(0,6) + "..." + addr.slice(-4);
+  
+  // Кнопка
+  const btn = document.getElementById("wallet-connect-btn");
+  if (btn) { btn.textContent = "Отключить кошелёк"; btn.classList.add("connected"); }
+
+  // Карточка
+  const sub = document.getElementById("wc-ton-sub");
+  const addrEl = document.getElementById("wc-address");
+  if (sub) sub.textContent = wallet.device?.appName || "TON Кошелёк подключён";
+  if (addrEl) addrEl.textContent = short;
+
+  // Подсветить кошелёк в списке
+  highlightConnectedWallet(wallet.device?.appName);
+
+  // Загрузить баланс TON
+  fetchTonBalance(addr);
+
+  showToast("Кошелёк подключён ✓");
+}
+
+function onWalletDisconnected() {
+  const btn = document.getElementById("wallet-connect-btn");
+  if (btn) { btn.textContent = "Подключить кошелёк"; btn.classList.remove("connected"); }
+
+  const amount = document.getElementById("wc-ton-amount");
+  const sub    = document.getElementById("wc-ton-sub");
+  const addrEl = document.getElementById("wc-address");
+  if (amount) amount.textContent = "0.00 TON";
+  if (sub)    sub.textContent    = "Подключите кошелёк для отображения";
+  if (addrEl) addrEl.textContent = "";
+
+  document.querySelectorAll(".wallet-item").forEach(el => el.classList.remove("connected-wallet"));
+  showToast("Кошелёк отключён");
+}
+
+function highlightConnectedWallet(appName) {
+  if (!appName) return;
+  document.querySelectorAll(".wallet-item").forEach(el => {
+    el.classList.remove("connected-wallet");
+    const name = el.querySelector(".wallet-item-name")?.textContent?.toLowerCase() || "";
+    if (appName.toLowerCase().includes(name.split(" ")[0].toLowerCase()) ||
+        name.includes(appName.toLowerCase().split(" ")[0])) {
+      el.classList.add("connected-wallet");
+      const tag = el.querySelector(".wallet-item-tag");
+      if (tag) tag.textContent = "Подключён ✓";
+    }
+  });
+}
+
+async function fetchTonBalance(address) {
+  try {
+    // Официальное TON API — не требует ключа
+    const r = await fetch(`https://toncenter.com/api/v2/getAddressBalance?address=${address}`);
+    const d = await r.json();
+    if (d.ok && d.result) {
+      const ton = (parseInt(d.result) / 1e9).toFixed(2);
+      const amountEl = document.getElementById("wc-ton-amount");
+      if (amountEl) amountEl.textContent = ton + " TON";
+    }
+  } catch(e) {
+    console.warn("Balance fetch error:", e);
+  }
+}
 </script>
 </body>
 </html>

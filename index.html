@@ -306,6 +306,34 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
 .fiat-desc{font-size:10px;color:#444;margin-top:1px;}
 .fiat-val{font-family:'Unbounded',sans-serif;font-size:11px;color:#fff;text-align:right;}
 .fiat-sub{font-size:9px;color:#444;text-align:right;margin-top:2px;}
+
+  /* BALANCE POPUP */
+.bal-popup-overlay{position:fixed;inset:0;z-index:400;pointer-events:none;}
+.bal-popup-overlay.open{pointer-events:all;}
+.bal-popup{
+  position:absolute;top:58px;right:12px;
+  background:#141414;border:0.5px solid #2a2a2a;
+  border-radius:18px;padding:16px;min-width:220px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.7);
+  opacity:0;transform:translateY(-8px) scale(0.97);
+  pointer-events:none;
+  transition:opacity 0.2s ease,transform 0.2s cubic-bezier(0.34,1.3,0.64,1);
+}
+.bal-popup-overlay.open .bal-popup{opacity:1;transform:translateY(0) scale(1);pointer-events:all;}
+.bal-popup-title{font-size:9px;color:#444;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px;}
+.bal-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid #1e1e1e;}
+.bal-row:last-of-type{border-bottom:none;}
+.bal-row-left{display:flex;align-items:center;gap:8px;}
+.bal-coin-icon{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.bal-coin-name{font-size:12px;color:#888;}
+.bal-coin-val{font-family:'Unbounded',sans-serif;font-size:12px;color:#fff;}
+.bal-coin-val.zero{color:#333;}
+.bal-divider{height:0.5px;background:#1e1e1e;margin:10px 0;}
+.bal-total-row{display:flex;align-items:center;justify-content:space-between;padding-top:2px;}
+.bal-total-label{font-size:10px;color:#555;letter-spacing:0.5px;}
+.bal-total-val{font-family:'Unbounded',sans-serif;font-size:14px;color:#fff;}
+.bal-topup-link{display:block;text-align:center;margin-top:12px;padding:10px;border-radius:12px;background:rgba(42,171,238,0.1);border:0.5px solid rgba(42,171,238,0.25);color:var(--accent);font-size:12px;cursor:pointer;transition:all 0.18s;}
+.bal-topup-link:active{opacity:0.7;}
   
 </style>
 </head>
@@ -350,46 +378,89 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
 <div id="app">
   <div class="pages">
 
-    <!-- HOME -->
-    <div class="page active" id="page-home">
-      <div class="topbar">
-  <span class="topbar-logo">ESCOBAR</span>
-  <div class="balance-badge" onclick="openTopupSheet()" id="balance-badge">
-    <div class="balance-badge-icon">
-      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+   <!-- HOME -->
+<div class="page active" id="page-home">
+  <div class="topbar">
+    <span class="topbar-logo">ESCOBAR</span>
+    <div class="balance-badge" onclick="toggleBalPopup(event)" id="balance-badge">
+      <div class="balance-badge-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <span class="balance-badge-amount loading" id="badge-balance">0,00 $</span>
     </div>
-    <span class="balance-badge-amount loading" id="badge-balance">0,00 $</span>
+  </div>
+
+  <!-- BALANCE POPUP -->
+  <div class="bal-popup-overlay" id="bal-popup-overlay" onclick="closeBalPopup()">
+    <div class="bal-popup" onclick="event.stopPropagation()">
+      <div class="bal-popup-title">Мой баланс</div>
+
+      <div class="bal-row">
+        <div class="bal-row-left">
+          <div class="bal-coin-icon" style="background:rgba(0,152,234,0.15);border:0.5px solid rgba(0,152,234,0.3);">💎</div>
+          <span class="bal-coin-name">TON</span>
+        </div>
+        <span class="bal-coin-val zero" id="pop-ton">0.00 TON</span>
+      </div>
+
+      <div class="bal-row">
+        <div class="bal-row-left">
+          <div class="bal-coin-icon" style="background:rgba(255,255,255,0.05);border:0.5px solid #2a2a2a;">🇷🇺</div>
+          <span class="bal-coin-name">RUB</span>
+        </div>
+        <span class="bal-coin-val zero" id="pop-rub">0.00 ₽</span>
+      </div>
+
+      <div class="bal-row">
+        <div class="bal-row-left">
+          <div class="bal-coin-icon" style="background:rgba(255,255,255,0.05);border:0.5px solid #2a2a2a;">🇲🇩</div>
+          <span class="bal-coin-name">RUB PMR</span>
+        </div>
+        <span class="bal-coin-val zero" id="pop-pmr">0.00 – 0.00 руб.ПМР</span>
+      </div>
+
+      <div class="bal-divider"></div>
+
+      <div class="bal-total-row">
+        <span class="bal-total-label">ИТОГО</span>
+        <span class="bal-total-val" id="pop-total">0.00 $</span>
+      </div>
+
+      <div class="bal-topup-link" onclick="closeBalPopup();switchPage('wallet');">
+        + Пополнить баланс
+      </div>
+    </div>
+  </div>
+
+  <div class="banner">
+    <div class="banner-sub">ДОБРО ПОЖАЛОВАТЬ</div>
+    <div class="banner-title">ESCOBAR<br><span>Market Services</span></div>
+  </div>
+  <div class="stats">
+    <div class="stat-card"><div class="stat-val" id="stat-orders">—</div><div class="stat-lbl">Выполнено заказов</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-clients">—</div><div class="stat-lbl">Активных клиентов</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-rate">—</div><div class="stat-lbl">Успешных обменов</div></div>
+  </div>
+  <div class="section-title">Популярные услуги</div>
+  <div class="services">
+    <div class="svc-card" onclick="openModal('Обмен валют','exchange','TON, USDT → RUB и обратно')">
+      <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+      <div class="svc-name">Обмен валют</div><div class="svc-desc">TON, USDT, BTC, ETH</div>
+    </div>
+    <div class="svc-card" onclick="openModal('Telegram Premium','telegram','3, 6, 12 месяцев')">
+      <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+      <div class="svc-name">Telegram</div><div class="svc-desc">Premium, Stars, Gifts</div>
+    </div>
+    <div class="svc-card" onclick="openModal('KYC Верификация','kyc','Bybit, Binance, OKX')">
+      <div class="svc-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+      <div class="svc-name">KYC</div><div class="svc-desc">Binance, Bybit, OKX</div>
+    </div>
+    <div class="svc-card" onclick="openModal('Донат','donate','Free Fire, PUBG, Steam')">
+      <div class="svc-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div class="svc-name">Донат</div><div class="svc-desc">Steam, Google Play</div>
+    </div>
   </div>
 </div>
-      <div class="banner">
-        <div class="banner-sub">ДОБРО ПОЖАЛОВАТЬ</div>
-        <div class="banner-title">ESCOBAR<br><span>Market Services</span></div>
-      </div>
-      <div class="stats">
-        <div class="stat-card"><div class="stat-val" id="stat-orders">—</div><div class="stat-lbl">Выполнено заказов</div></div>
-        <div class="stat-card"><div class="stat-val" id="stat-clients">—</div><div class="stat-lbl">Активных клиентов</div></div>
-        <div class="stat-card"><div class="stat-val" id="stat-rate">—</div><div class="stat-lbl">Успешных обменов</div></div>
-      </div>
-      <div class="section-title">Популярные услуги</div>
-      <div class="services">
-        <div class="svc-card" onclick="openModal('Обмен валют','exchange','TON, USDT → RUB и обратно')">
-          <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
-          <div class="svc-name">Обмен валют</div><div class="svc-desc">TON, USDT, BTC, ETH</div>
-        </div>
-        <div class="svc-card" onclick="openModal('Telegram Premium','telegram','3, 6, 12 месяцев')">
-          <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
-          <div class="svc-name">Telegram</div><div class="svc-desc">Premium, Stars, Gifts</div>
-        </div>
-        <div class="svc-card" onclick="openModal('KYC Верификация','kyc','Bybit, Binance, OKX')">
-          <div class="svc-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-          <div class="svc-name">KYC</div><div class="svc-desc">Binance, Bybit, OKX</div>
-        </div>
-        <div class="svc-card" onclick="openModal('Донат','donate','Free Fire, PUBG, Steam')">
-          <div class="svc-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-          <div class="svc-name">Донат</div><div class="svc-desc">Steam, Google Play</div>
-        </div>
-      </div>
-    </div>
 
     <!-- SERVICES -->
     <div class="page" id="page-services">
@@ -446,6 +517,9 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
         <div class="wc-sub" id="wc-ton-sub">Нажмите на сумму для смены валюты</div>
         <div class="wc-address" id="wc-address"></div>
       </div>
+      <button class="wallet-connect-btn" style="background:var(--accent);margin-bottom:8px;" onclick="openTopupSheet()">
+      Пополнить баланс
+      </button>
       <button class="wallet-connect-btn" id="wallet-connect-btn" onclick="handleWalletBtn()">
         Подключить кошелёк
       </button>
@@ -985,6 +1059,73 @@ const TOPUP_DETAILS = {
       </div>`
   }
 };
+
+  // ── BALANCE POPUP ─────────────────────────────────────────
+function toggleBalPopup(e) {
+  e.stopPropagation();
+  const ov = document.getElementById("bal-popup-overlay");
+  if (ov.classList.contains("open")) { closeBalPopup(); return; }
+  renderBalPopup();
+  ov.classList.add("open");
+  setTimeout(() => document.addEventListener("click", _balOutsideClick), 10);
+}
+function closeBalPopup() {
+  document.getElementById("bal-popup-overlay")?.classList.remove("open");
+  document.removeEventListener("click", _balOutsideClick);
+}
+function _balOutsideClick(e) {
+  if (!document.getElementById("bal-popup-overlay")?.contains(e.target)) closeBalPopup();
+}
+
+function renderBalPopup() {
+  // TON
+  const tonEl  = document.getElementById("pop-ton");
+  const rubEl  = document.getElementById("pop-rub");
+  const pmrEl  = document.getElementById("pop-pmr");
+  const totEl  = document.getElementById("pop-total");
+
+  const usd    = userBalance;                        // баланс платформы в $
+  const rub    = fiatRatesData.rub  || null;
+  const ton    = (tonPrice && tonPrice.usd) ? tonPrice.usd : null;
+
+  // ── TON ──
+  if (ton && usd > 0) {
+    const v = (usd / ton).toFixed(2);
+    tonEl.textContent = v + " TON";
+    tonEl.classList.remove("zero");
+  } else {
+    tonEl.textContent = "0.00 TON";
+    tonEl.classList.add("zero");
+    if (!ton) fetchTonPrice().then(renderBalPopup);
+  }
+
+  // ── RUB ──
+  if (rub && usd > 0) {
+    const v = Math.round(usd * rub).toLocaleString("ru-RU");
+    rubEl.textContent = v + " ₽";
+    rubEl.classList.remove("zero");
+  } else {
+    rubEl.textContent = "0.00 ₽";
+    rubEl.classList.add("zero");
+    if (!rub) loadFiatRates().then(renderBalPopup);
+  }
+
+  // ── RUB PMR — диапазон (курс ±5%) ──
+  if (rub && usd > 0) {
+    const pmrRate    = rub * 0.195;          // 1$ → руб.ПМР
+    const pmrAmount  = usd * pmrRate;
+    const lo = Math.floor(pmrAmount * 0.95).toLocaleString("ru-RU");
+    const hi = Math.ceil (pmrAmount * 1.05).toLocaleString("ru-RU");
+    pmrEl.textContent = lo + " – " + hi + " руб.ПМР";
+    pmrEl.classList.remove("zero");
+  } else {
+    pmrEl.textContent = "0.00 – 0.00 руб.ПМР";
+    pmrEl.classList.add("zero");
+  }
+
+  // ── ИТОГО в $ ──
+  totEl.textContent = usd.toLocaleString("ru-RU", {minimumFractionDigits:2, maximumFractionDigits:2}) + " $";
+}
 
 function openTopupSheet() {
   const el = document.getElementById("topup-current-balance");

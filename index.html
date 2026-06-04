@@ -158,6 +158,44 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
 .toast.show{transform:translateX(-50%) translateY(0);}
 
 *{scrollbar-width:none;}
+
+  /* BALANCE BADGE */
+.balance-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,0.05);
+  border:0.5px solid rgba(255,255,255,0.12);
+  border-radius:100px;
+  padding:7px 14px 7px 10px;
+  cursor:pointer;
+  transition:all 0.2s ease;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.balance-badge:active{transform:scale(0.96);background:rgba(255,255,255,0.08);}
+.balance-badge-icon{
+  width:24px;height:24px;border-radius:50%;
+  background:rgba(42,171,238,0.15);
+  border:0.5px solid rgba(42,171,238,0.3);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.balance-badge-icon svg{width:13px;height:13px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.balance-badge-amount{
+  font-family:'Unbounded',sans-serif;
+  font-size:12px;font-weight:400;
+  color:#fff;letter-spacing:0.3px;
+  transition:all 0.3s ease;
+  white-space:nowrap;
+}
+.balance-badge-amount.loading{color:#333;}
+.balance-badge-amount.updated{
+  animation:balancePop 0.4s cubic-bezier(0.34,1.4,0.64,1);
+}
+@keyframes balancePop{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.15);color:var(--accent);}
+  100%{transform:scale(1)}
+}
 </style>
 </head>
 <body>
@@ -204,9 +242,14 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
     <!-- HOME -->
     <div class="page active" id="page-home">
       <div class="topbar">
-        <span class="topbar-logo">ESCOBAR</span>
-        <div class="topbar-avatar"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-      </div>
+  <span class="topbar-logo">ESCOBAR</span>
+  <div class="balance-badge" onclick="switchPage('wallet')" id="balance-badge">
+    <div class="balance-badge-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </div>
+    <span class="balance-badge-amount loading" id="badge-balance">0,00 $</span>
+  </div>
+</div>
       <div class="banner">
         <div class="banner-sub">ДОБРО ПОЖАЛОВАТЬ</div>
         <div class="banner-title">ESCOBAR<br><span>Market Services</span></div>
@@ -358,6 +401,42 @@ let tgUser = {id:"",username:"",first_name:""};
 let currentService = "", currentCategory = "";
 let allOrders = [];
 
+// ── BALANCE ───────────────────────────────────────────────
+let userBalance = 0;
+
+async function loadUserBalance() {
+  if (!tgUser.id) return;
+  try {
+    const d = await apiFetch("/user/balance?user_id=" + tgUser.id);
+    if (typeof d.balance === "number") {
+      setBalanceBadge(d.balance);
+    }
+  } catch {}
+}
+
+function setBalanceBadge(amount) {
+  const el = document.getElementById("badge-balance");
+  if (!el) return;
+  userBalance = amount;
+  el.classList.remove("loading","updated");
+  const formatted = amount.toLocaleString("ru-RU",{minimumFractionDigits:2,maximumFractionDigits:2}) + " $";
+  el.textContent = formatted;
+  void el.offsetWidth;
+  el.classList.add("updated");
+}
+
+function syncWalletPageBalance() {
+  const el = document.querySelector(".wc-amount");
+  const sub = document.querySelector(".wc-sub");
+  if (!el) return;
+  if (userBalance > 0) {
+    el.textContent = userBalance.toLocaleString("ru-RU",{minimumFractionDigits:2,maximumFractionDigits:2}) + " $";
+    if (sub) sub.textContent = "Баланс на платформе ESCOBAR";
+  }
+}
+
+setInterval(loadUserBalance, 30000);
+
 // ── NAV ──────────────────────────────────────────────────
 const PAGES = {home:"page-home",services:"page-services",orders:"page-orders",wallet:"page-wallet",profile:"page-profile"};
 const NAVS  = {home:"nav-home", services:"nav-services", orders:"nav-orders", wallet:"nav-wallet", profile:"nav-profile"};
@@ -371,6 +450,8 @@ function switchPage(name) {
   document.getElementById(NAVS[name]).classList.add("active");
   current = name;
   if (name === "orders") loadUserOrders("all");
+  if (name === "orders") loadUserOrders("all");
+  if (name === "wallet") syncWalletPageBalance(); // ← добавить
 }
 
 // ── STATS ─────────────────────────────────────────────────
@@ -530,6 +611,7 @@ function enterApp() {
   document.getElementById("app").classList.add("visible");
   loadStats();
   registerAndLoadUser();
+  loadUserBalance();
 }
 
 // ── TOAST ─────────────────────────────────────────────────

@@ -935,14 +935,21 @@ const TOPUP_DETAILS = {
     body: `
       <div style="background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:16px;margin-bottom:10px;">
         <div style="font-size:10px;color:#444;letter-spacing:1px;margin-bottom:8px;">АДРЕС КОШЕЛЬКА</div>
-        <div style="font-family:'Unbounded',sans-serif;font-size:11px;color:#fff;word-break:break-all;line-height:1.6;" id="ton-addr">ТВОЙ_TON_АДРЕС</div>
+        <div style="font-family:'Unbounded',sans-serif;font-size:11px;color:#fff;word-break:break-all;line-height:1.6;">ТВОЙ_TON_АДРЕС</div>
       </div>
       <div style="background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:12px;color:#444;">Минимальная сумма</span>
         <span style="font-size:12px;color:#fff;font-family:'Unbounded',sans-serif;">1 TON</span>
       </div>
+      <div style="background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:14px 16px;margin-bottom:10px;">
+        <div style="font-size:10px;color:#444;letter-spacing:1px;margin-bottom:8px;">HASH ТРАНЗАКЦИИ (для автозачисления)</div>
+        <input id="topup-tx-hash" class="modal-input"
+          placeholder="Вставь tx hash — баланс зачислится сам"
+          style="margin-bottom:0;font-size:11px;" />
+      </div>
       <div style="font-size:11px;color:#333;line-height:1.7;padding:0 4px;">
-        После отправки нажми кнопку ниже — менеджер зачислит баланс в течение 15 минут.
+        Вставь hash транзакции — баланс зачислится <b style="color:#555">автоматически</b>.<br>
+        Без hash — заявка уйдёт менеджеру (до 15 мин).
       </div>`
   },
   rub: {
@@ -1166,20 +1173,38 @@ async function notifyTopupPaid() {
   if (!amountVal || isNaN(amount) || amount <= 0) {
     showToast("Введите сумму пополнения"); return;
   }
-  const methodNames = { ton: "TON", rub: "RUB (РФ)", pmr: "RUB PMR" };
-  const methodLabel = methodNames[currentTopupMethod] || currentTopupMethod;
+  const methodNames   = { ton: "TON", rub: "RUB (РФ)", pmr: "RUB PMR" };
+  const methodLabel   = methodNames[currentTopupMethod] || currentTopupMethod;
+  const isCrypto      = currentTopupMethod === "ton";
+
+  // Для TON пробуем получить tx_hash из поля (если пользователь вставил)
+  const txInput = document.getElementById("topup-tx-hash");
+  const txHash  = txInput ? txInput.value.trim() : "";
+
   try {
-    await apiFetch("/topup_notify", "POST", {
+    const result = await apiFetch("/topup_notify", "POST", {
       user_id:    tgUser.id,
       username:   tgUser.username,
       first_name: tgUser.first_name,
       amount:     amount,
-      method:     methodLabel
+      method:     methodLabel,
+      tx_hash:    txHash
     });
-  } catch(e) { console.warn("topup notify err:", e); }
-  document.getElementById("topup-method-sheet").classList.remove("open");
-  document.getElementById("topup-sheet").classList.remove("open");
-  showToast(`Заявка на ${amount} $ отправлена ✓`);
+
+    document.getElementById("topup-method-sheet").classList.remove("open");
+    document.getElementById("topup-sheet").classList.remove("open");
+
+    if (result.auto_credited) {
+      // Крипто — автозачисление
+      setBalanceBadge(result.new_balance);
+      syncWalletPageBalance();
+      showToast(`✅ ${amount} ${methodLabel} зачислено автоматически!`);
+    } else {
+      showToast(`Заявка на ${amount} ${methodLabel} отправлена ✓`);
+    }
+  } catch(e) {
+    showToast("Ошибка отправки заявки");
+  }
 }
 
 // ── CRYPTO RATES ─────────────────────────────────────────

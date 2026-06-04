@@ -438,18 +438,17 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
     </div>
 
     <!-- WALLET -->
-  <div class="page" id="page-wallet" style="overflow-y:auto;">
+    <div class="page" id="page-wallet">
       <div class="topbar"><span class="topbar-logo">КОШЕЛЬКИ</span></div>
-   <div class="wallet-card">
-  <div class="wc-label">ОБЩИЙ БАЛАНС</div>
-  <div class="wc-amount" id="wc-ton-amount" onclick="cycleWalletCurrency()" style="cursor:pointer;user-select:none;">0.00 TON</div>
-  <div class="wc-sub" id="wc-ton-sub">Нажмите на сумму для смены валюты</div>
-  <div class="wc-address" id="wc-address"></div>
-</div>
-</div>
-<button class="wallet-connect-btn" id="wallet-connect-btn" onclick="handleWalletBtn()">
-Подключить кошелёк
-</button>
+      <div class="wallet-card">
+        <div class="wc-label">ОБЩИЙ БАЛАНС</div>
+        <div class="wc-amount" id="wc-ton-amount" onclick="cycleWalletCurrency()" style="cursor:pointer;user-select:none;">0.00 $</div>
+        <div class="wc-sub" id="wc-ton-sub">Нажмите на сумму для смены валюты</div>
+        <div class="wc-address" id="wc-address"></div>
+      </div>
+      <button class="wallet-connect-btn" id="wallet-connect-btn" onclick="handleWalletBtn()">
+        Подключить кошелёк
+      </button>
       <div class="section-title">Поддерживаемые кошельки</div>
       <div class="wallet-list">
         <div class="wallet-item"><div class="wallet-dot" style="background:#0098ea"></div><div class="wallet-item-name">Tonkeeper</div><div class="wallet-item-tag">TON Connect</div></div>
@@ -459,7 +458,7 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
         <div class="wallet-item"><div class="wallet-dot" style="background:#6C6AFF"></div><div class="wallet-item-name">OpenMask</div><div class="wallet-item-tag">TON Connect</div></div>
       </div>
       <div class="section-title" style="padding-top:16px;">Курсы к доллару</div>
-      <div style="padding:0 12px 80px;display:flex;flex-direction:column;gap:6px;">
+      <div style="padding:0 12px 8px;display:flex;flex-direction:column;gap:6px;">
         <div class="fiat-rate-item">
           <div class="fiat-rate-left">
             <div class="fiat-flag">🇷🇺</div>
@@ -474,6 +473,10 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
           </div>
           <div><div class="fiat-val" id="rate-rub-pmr">—</div><div class="fiat-sub">приблизительно</div></div>
         </div>
+      </div>
+      <div class="section-title" style="padding-top:8px;">Курсы криптовалют</div>
+      <div id="crypto-rates-wallet" style="padding:0 12px 80px;display:flex;flex-direction:column;gap:8px;">
+        <div style="text-align:center;padding:24px;color:#333;font-size:12px;">Загрузка...</div>
       </div>
     </div>
 
@@ -1209,65 +1212,109 @@ async function loadCryptoRates() {
       { key: "tether",   name: "Tether",   sym: "USDT", icon: "₮",  bg: "rgba(38,161,123,0.15)", border: "rgba(38,161,123,0.3)" },
     ];
 
-    container.innerHTML = coins.map(c => {
-      const info   = d[c.key];
-      if (!info) return "";
-      const price  = info.usd;
-      const change = info.usd_24h_change;
-      const priceStr = price >= 1000
-        ? "$" + price.toLocaleString("en-US", { maximumFractionDigits: 0 })
-        : "$" + price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
-      const changeStr = (change >= 0 ? "+" : "") + change.toFixed(2) + "%";
-      const cls = change > 0 ? "rate-up" : change < 0 ? "rate-down" : "rate-neutral";
-      return `
-        <div class="rate-card">
-          <div class="rate-left">
-            <div class="rate-coin-icon" style="background:${c.bg};border:0.5px solid ${c.border};">${c.icon}</div>
-            <div><div class="rate-coin-name">${c.name}</div><div class="rate-coin-sym">${c.sym}</div></div>
+container.innerHTML = coins.map(c => {
+    const info = d[c.key];
+    if (!info) return "";
+    const price  = info.usd;
+    const change = info.usd_24h_change || 0;
+    const priceStr = price >= 1000
+      ? "$" + price.toLocaleString("en-US", { maximumFractionDigits: 0 })
+      : "$" + price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+    const rubStr = price >= 1000
+      ? Math.round(price * fiatRatesData.rub).toLocaleString("ru-RU") + " ₽"
+      : (price * fiatRatesData.rub).toLocaleString("ru-RU", {maximumFractionDigits:1}) + " ₽";
+    const changeStr = (change >= 0 ? "+" : "") + change.toFixed(2) + "%";
+    const changeColor = change > 0 ? "#27ae60" : change < 0 ? "#c0392b" : "#555";
+    const changeBg    = change > 0 ? "rgba(39,174,96,0.1)" : change < 0 ? "rgba(192,57,43,0.1)" : "rgba(80,80,80,0.1)";
+    return `
+      <div style="background:#111;border:0.5px solid #1e1e1e;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+        <div style="width:44px;height:44px;border-radius:50%;background:${c.bg};border:0.5px solid ${c.border};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${c.icon}</div>
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div>
+              <span style="font-size:13px;font-weight:500;color:#e0e0e0;">${c.name}</span>
+              <span style="font-size:10px;color:#444;margin-left:6px;">${c.sym}</span>
+            </div>
+            <span style="font-family:'Unbounded',sans-serif;font-size:12px;color:#fff;">${priceStr}</span>
           </div>
-          <div class="rate-right">
-            <div class="rate-price">${priceStr}</div>
-            <div class="rate-change ${cls}">${changeStr} 24ч</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:10px;color:#333;">${rubStr}</span>
+            <span style="font-size:10px;padding:3px 8px;border-radius:100px;background:${changeBg};color:${changeColor};">${changeStr} 24ч</span>
           </div>
-        </div>`;
-    }).join("") + `<div class="rates-footer">CoinGecko · обновлено ${new Date().toLocaleTimeString("ru-RU", {hour:"2-digit",minute:"2-digit"})}</div>`;
-
-    container.dataset.ts = Date.now();
-    cryptoRatesLoaded = true;
-  } catch(e) {
-    console.warn("loadCryptoRates:", e);
-    container.innerHTML = '<div class="rates-loading" style="color:#333;">Курсы временно недоступны</div>';
-  }
-}
+        </div>
+      </div>`;
+  }).join("") + `<div style="font-size:9px;color:#222;text-align:center;padding:4px 0;letter-spacing:0.5px;">CoinGecko · обновлено ${new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}</div>`;
 
 // ── FIAT RATES (wallet tab) ───────────────────────────────────
 async function loadFiatRates() {
-  // Если ещё не загружали крипту — загружаем чтобы получить rub rate
   if (!fiatRatesData.rub) {
     try {
       const resp = await fetch(
-        "https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=rub"
+        "https://api.coingecko.com/api/v3/simple/price" +
+        "?ids=tether,bitcoin,ethereum,toncoin,solana,bnb" +
+        "&vs_currencies=usd,rub" +
+        "&include_24hr_change=true"
       );
       const d = await resp.json();
       if (d.tether?.rub) fiatRatesData.rub = d.tether.rub;
+      fiatRatesData.coins = d;
     } catch(e) { console.warn("fiatRates:", e); }
   }
 
-  const rubEl  = document.getElementById("rate-rub-rf");
-  const pmrEl  = document.getElementById("rate-rub-pmr");
-  if (!rubEl || !pmrEl) return;
-
-  if (fiatRatesData.rub) {
-    const rubRate = fiatRatesData.rub;
-    rubEl.textContent = `1 $ ≈ ${Math.round(rubRate)} ₽`;
-    // PMR: курс ПРБ обычно ниже RF, ~16-18 за $1
-    // Приближение: PMR ≈ RUB_RF × 0.19 (1 USD ≈ 17 PMR)
-    const pmrRate = Math.round(rubRate * 0.195);
-    pmrEl.textContent = `1 $ ≈ ${pmrRate} руб.`;
-  } else {
-    rubEl.textContent = "Недоступно";
-    pmrEl.textContent = "Недоступно";
+  // Фиат курсы
+  const rubEl = document.getElementById("rate-rub-rf");
+  const pmrEl = document.getElementById("rate-rub-pmr");
+  if (rubEl && pmrEl) {
+    if (fiatRatesData.rub) {
+      rubEl.textContent = `1 $ ≈ ${Math.round(fiatRatesData.rub)} ₽`;
+      pmrEl.textContent = `1 $ ≈ ${Math.round(fiatRatesData.rub * 0.195)} руб.`;
+    } else {
+      rubEl.textContent = "Недоступно";
+      pmrEl.textContent = "Недоступно";
+    }
   }
+
+  // Крипто курсы в кошельке
+  const container = document.getElementById("crypto-rates-wallet");
+  if (!container) return;
+
+  const coins = [
+    { key: "bitcoin",  name: "Bitcoin",  sym: "BTC",  icon: "₿",  bg: "rgba(247,147,26,0.15)", border: "rgba(247,147,26,0.3)"  },
+    { key: "ethereum", name: "Ethereum", sym: "ETH",  icon: "Ξ",  bg: "rgba(98,126,234,0.15)", border: "rgba(98,126,234,0.3)"  },
+    { key: "toncoin",  name: "Toncoin",  sym: "TON",  icon: "💎", bg: "rgba(0,152,234,0.15)",  border: "rgba(0,152,234,0.3)"   },
+    { key: "tether",   name: "Tether",   sym: "USDT", icon: "₮",  bg: "rgba(38,161,123,0.15)", border: "rgba(38,161,123,0.3)"  },
+    { key: "solana",   name: "Solana",   sym: "SOL",  icon: "◎",  bg: "rgba(153,69,255,0.15)", border: "rgba(153,69,255,0.3)"  },
+    { key: "bnb",      name: "BNB",      sym: "BNB",  icon: "⬡",  bg: "rgba(243,186,47,0.15)", border: "rgba(243,186,47,0.3)"  },
+  ];
+
+  const d = fiatRatesData.coins;
+  if (!d) {
+    container.innerHTML = '<div class="rates-loading" style="color:#333;">Курсы недоступны</div>';
+    return;
+  }
+
+  container.innerHTML = coins.map(c => {
+    const info = d[c.key];
+    if (!info) return "";
+    const price  = info.usd;
+    const change = info.usd_24h_change || 0;
+    const priceStr = price >= 1000
+      ? "$" + price.toLocaleString("en-US", { maximumFractionDigits: 0 })
+      : "$" + price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+    const changeStr = (change >= 0 ? "+" : "") + change.toFixed(2) + "%";
+    const cls = change > 0 ? "rate-up" : change < 0 ? "rate-down" : "rate-neutral";
+    return `
+      <div class="rate-card">
+        <div class="rate-left">
+          <div class="rate-coin-icon" style="background:${c.bg};border:0.5px solid ${c.border};">${c.icon}</div>
+          <div><div class="rate-coin-name">${c.name}</div><div class="rate-coin-sym">${c.sym}</div></div>
+        </div>
+        <div class="rate-right">
+          <div class="rate-price">${priceStr}</div>
+          <div class="rate-change ${cls}">${changeStr} 24ч</div>
+        </div>
+      </div>`;
+  }).join("") + `<div class="rates-footer">CoinGecko · ${new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}</div>`;
 }
  
 </script>

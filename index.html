@@ -218,6 +218,37 @@ nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);display:flex;alig
   border-color:rgba(42,171,238,0.3);
   background:rgba(42,171,238,0.08);
 }
+
+  /* OPTION ITEMS */
+.opt-item{background:#111;border:0.5px solid #1e1e1e;border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all 0.18s;}
+.opt-item:active{background:#1a1a1a;transform:scale(0.98);}
+.opt-item.selected{border-color:rgba(42,171,238,0.4);background:rgba(42,171,238,0.06);}
+.opt-item-label{font-size:13px;font-weight:500;color:#e0e0e0;}
+.opt-item-hint{font-size:11px;color:#444;margin-top:2px;}
+.opt-item-check{width:18px;height:18px;border-radius:50%;border:0.5px solid #333;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.opt-item.selected .opt-item-check{background:var(--accent);border-color:var(--accent);}
+.opt-item.selected .opt-item-check::after{content:'';width:6px;height:6px;border-radius:50%;background:#fff;}
+/* CATALOG */
+.svc-catalog-modal{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s ease;}
+.svc-catalog-modal.open{opacity:1;pointer-events:all;}
+.svc-catalog-sheet{background:#141414;border:0.5px solid #2a2a2a;border-radius:24px 24px 0 0;padding:20px 20px 40px;width:100%;max-width:420px;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.34,1.2,0.64,1);}
+.svc-catalog-modal.open .svc-catalog-sheet{transform:translateY(0);}
+.svc-catalog-list{display:flex;flex-direction:column;gap:8px;margin-top:16px;max-height:60vh;overflow-y:auto;}
+.svc-catalog-list::-webkit-scrollbar{display:none;}
+.svc-cat-row{background:#111;border:0.5px solid #1e1e1e;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:background 0.15s;}
+.svc-cat-row:active{background:#1a1a1a;}
+.svc-cat-icon{width:42px;height:42px;border-radius:12px;background:#1a1a1a;border:0.5px solid #252525;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.svc-cat-icon svg{width:20px;height:20px;stroke:rgba(255,255,255,0.55);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.svc-cat-info{flex:1;}
+.svc-cat-name{font-size:13px;font-weight:500;color:#e0e0e0;margin-bottom:3px;}
+.svc-cat-desc{font-size:11px;color:#444;}
+.svc-cat-badge{font-size:9px;padding:3px 8px;border-radius:100px;background:rgba(42,171,238,0.1);color:var(--accent);border:0.5px solid rgba(42,171,238,0.2);white-space:nowrap;}
+/* AVATAR */
+.profile-ava img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.topbar-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+/* OPTION BADGE */
+.opt-selected-badge{display:none;margin-bottom:10px;background:rgba(42,171,238,0.08);border:0.5px solid rgba(42,171,238,0.25);border-radius:10px;padding:9px 14px;font-size:12px;color:var(--accent);}
+  
 </style>
 </head>
 <body>
@@ -579,23 +610,129 @@ function filterOrders(btn) {
   renderOrders(allOrders.filter(o => o.status === status));
 }
 
+// ── SERVICES CATALOG ──────────────────────────────────────
+let servicesCatalog = [];
+let selectedOption = "";
+let userAvatarUrl = "";
+
+const SERVICES_LOCAL = [
+  {id:"exchange",category:"exchange",name:"Обмен валют",description:"TON → RUB, USDT → RUB и обратно",icon:"exchange",options:[{label:"TON → RUB",hint:"Лучший курс"},{label:"USDT → RUB",hint:"TRC20 / ERC20"},{label:"RUB → TON",hint:""},{label:"BTC → RUB",hint:"От 0.001 BTC"}]},
+  {id:"tg_premium",category:"telegram",name:"Telegram Premium",description:"3, 6, 12 месяцев — лучшая цена",icon:"premium",options:[{label:"3 месяца",hint:""},{label:"6 месяцев",hint:"Выгоднее"},{label:"12 месяцев",hint:"Максимум выгоды"}]},
+  {id:"tg_stars",category:"telegram",name:"Telegram Stars",description:"100 / 500 / 1000 / 5000 Stars",icon:"stars",options:[{label:"100 Stars",hint:""},{label:"500 Stars",hint:""},{label:"1000 Stars",hint:"Популярно"},{label:"5000 Stars",hint:""}]},
+  {id:"kyc",category:"kyc",name:"KYC Верификация",description:"Bybit, Binance, OKX, Bitget",icon:"kyc",options:[{label:"Bybit",hint:""},{label:"Binance",hint:""},{label:"OKX",hint:""},{label:"Bitget",hint:""}]},
+  {id:"donate",category:"donate",name:"Донат в игры",description:"Free Fire, PUBG, Steam, Google Play",icon:"donate",options:[{label:"Free Fire",hint:"Diamonds"},{label:"PUBG Mobile",hint:"UC"},{label:"Steam",hint:"Пополнение"},{label:"Google Play",hint:"Пополнение"}]},
+  {id:"tg_gifts",category:"telegram",name:"Telegram Gifts",description:"Уникальные подарки в Telegram",icon:"gifts",options:[{label:"Подарок на выбор",hint:"Укажи какой"}]},
+];
+
+function getSvcIcon(key){
+  const m={
+    exchange:`<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
+    premium:`<svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`,
+    stars:`<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+    kyc:`<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+    donate:`<svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`,
+    gifts:`<svg viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>`,
+  };
+  return m[key]||m.exchange;
+}
+
+async function loadServicesCatalog() {
+  try {
+    const d = await apiFetch("/services");
+    if (Array.isArray(d) && d.length) servicesCatalog = d;
+    else servicesCatalog = SERVICES_LOCAL;
+  } catch { servicesCatalog = SERVICES_LOCAL; }
+}
+
 // ── MODAL ─────────────────────────────────────────────────
 function openModal(service, category, sub) {
-  currentService  = service;
-  currentCategory = category;
-  document.getElementById("modal-title").textContent = service;
-  document.getElementById("modal-sub").textContent   = sub + " — заполните детали";
-  document.getElementById("modal-detail").value   = "";
-  document.getElementById("modal-amount").value   = "";
-  document.getElementById("modal-currency").value = "RUB";
-  document.getElementById("modal-contact").value  = tgUser.username ? "@" + tgUser.username : "";
-  const btn = document.getElementById("modal-submit");
-  btn.textContent = "Отправить заявку"; btn.className = "modal-btn";
-  document.getElementById("modal").classList.add("open");
+  const svc = servicesCatalog.find(s => s.category === category || s.name === service);
+  if (svc) { openOptionsModal(svc); return; }
+  loadServicesCatalog().then(() => {
+    const s2 = servicesCatalog.find(s => s.category === category || s.name === service);
+    if (s2) openOptionsModal(s2);
+    else openServicesCatalog();
+  });
+}
+
+function openServicesCatalog() {
+  const list = document.getElementById("svc-catalog-list");
+  list.innerHTML = servicesCatalog.map(svc => `
+    <div class="svc-cat-row" onclick="
+      document.getElementById('svc-catalog-modal').classList.remove('open');
+      setTimeout(()=>openOptionsModal(servicesCatalog.find(s=>s.id==='${svc.id}')),280)">
+      <div class="svc-cat-icon">${getSvcIcon(svc.icon)}</div>
+      <div class="svc-cat-info">
+        <div class="svc-cat-name">${svc.name}</div>
+        <div class="svc-cat-desc">${svc.description}</div>
+      </div>
+      <span class="svc-cat-badge">Доступно</span>
+    </div>
+  `).join("");
+  document.getElementById("svc-catalog-modal").classList.add("open");
+}
+
+function openOptionsModal(svc) {
+  if (!svc) return;
+  currentService  = svc.name;
+  currentCategory = svc.category;
+  selectedOption  = "";
+  document.getElementById("opt-title").textContent = svc.name;
+  document.getElementById("opt-sub").textContent   = "Выберите подходящий вариант";
+  const list = document.getElementById("opt-list");
+  list.innerHTML = svc.options.map((opt, i) => `
+    <div class="opt-item" id="opt-${i}" onclick="selectOption(${i},'${opt.label.replace(/'/g,"\\'")}',this)">
+      <div>
+        <div class="opt-item-label">${opt.label}</div>
+        ${opt.hint ? `<div class="opt-item-hint">${opt.hint}</div>` : ""}
+      </div>
+      <div class="opt-item-check"></div>
+    </div>
+  `).join("");
+  list.innerHTML += `<button class="modal-btn" id="opt-next-btn" style="opacity:0.3;pointer-events:none;margin-top:4px" onclick="proceedToOrder()">Далее →</button>`;
+  document.getElementById("modal-options").classList.add("open");
+}
+
+function selectOption(idx, label, el) {
+  document.querySelectorAll(".opt-item").forEach(e => e.classList.remove("selected"));
+  el.classList.add("selected");
+  selectedOption = label;
+  const btn = document.getElementById("opt-next-btn");
+  if (btn) { btn.style.opacity = "1"; btn.style.pointerEvents = "all"; }
+}
+
+function proceedToOrder() {
+  document.getElementById("modal-options").classList.remove("open");
+  setTimeout(() => {
+    const badge = document.getElementById("modal-option-badge");
+    if (badge) { badge.textContent = "✓ " + selectedOption; badge.style.display = "block"; }
+    document.getElementById("modal-title").textContent = currentService;
+    document.getElementById("modal-sub").textContent   = selectedOption + " — заполните детали";
+    document.getElementById("modal-detail").value   = "";
+    document.getElementById("modal-amount").value   = "";
+    document.getElementById("modal-currency").value = "RUB";
+    document.getElementById("modal-contact").value  = tgUser.username ? "@" + tgUser.username : "";
+    const btn = document.getElementById("modal-submit");
+    btn.textContent = "Отправить заявку"; btn.className = "modal-btn";
+    document.getElementById("modal").classList.add("open");
+  }, 280);
 }
 
 function closeModal(e) {
-  if (e.target.id === "modal") document.getElementById("modal").classList.remove("open");
+  if (e.target.id === "modal") {
+    document.getElementById("modal").classList.remove("open");
+    const badge = document.getElementById("modal-option-badge");
+    if (badge) badge.style.display = "none";
+  }
+}
+
+function applyAvatar(url) {
+  if (!url) return;
+  userAvatarUrl = url;
+  const tba = document.querySelector(".topbar-avatar");
+  if (tba) tba.innerHTML = `<img src="${url}" onerror="this.style.display='none'">`;
+  const pa = document.querySelector(".profile-ava");
+  if (pa) pa.innerHTML = `<img src="${url}" onerror="this.style.display='none'">`;
 }
 
 async function submitOrder() {
@@ -611,9 +748,10 @@ async function submitOrder() {
       user_id:    tgUser.id,
       username:   tgUser.username,
       first_name: tgUser.first_name,
+      avatar_url: userAvatarUrl,
       service:    currentService,
       category:   currentCategory,
-      details:    {detail, contact},
+      details:    {detail, contact, option: selectedOption},
       amount, currency
     });
     if (d.ok) {
@@ -622,7 +760,11 @@ async function submitOrder() {
       await loadStats();
       showToast("Заявка " + d.order_num + " отправлена");
       if (current === "orders") loadUserOrders("all");
-      setTimeout(() => document.getElementById("modal").classList.remove("open"), 2000);
+      setTimeout(() => {
+        document.getElementById("modal").classList.remove("open");
+        const badge = document.getElementById("modal-option-badge");
+        if (badge) badge.style.display = "none";
+      }, 2000);
     } else throw new Error();
   } catch {
     btn.textContent = "Отправить заявку"; btn.classList.remove("loading");
@@ -790,6 +932,29 @@ async function fetchTonBalance(address) {
     console.warn("Balance fetch error:", e);
   }
 }
+
+ 
 </script>
+
+  <!-- МОДАЛ ВЫБОРА ОПЦИИ -->
+<div class="modal-overlay" id="modal-options" onclick="if(event.target.id==='modal-options')this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="opt-title">Выберите вариант</div>
+    <div class="modal-sub" id="opt-sub"></div>
+    <div id="opt-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+  </div>
+</div>
+
+<!-- ШТОРКА КАТАЛОГА ВСЕХ УСЛУГ -->
+<div class="svc-catalog-modal" id="svc-catalog-modal" onclick="if(event.target.id==='svc-catalog-modal')this.classList.remove('open')">
+  <div class="svc-catalog-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Все услуги</div>
+    <div class="modal-sub">Выберите нужную услугу</div>
+    <div class="svc-catalog-list" id="svc-catalog-list"></div>
+  </div>
+</div>
+  
 </body>
 </html>
